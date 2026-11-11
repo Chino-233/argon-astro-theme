@@ -1,0 +1,137 @@
+---
+import { getEntry, render } from 'astro:content';
+import Layout from '../layouts/ArgonLayout.astro';
+import EntryCard from '../components/EntryCard.astro';
+import PostMeta from '../components/PostMeta.astro';
+import CommentList from '../components/CommentList.astro';
+import Pagination from '../components/Pagination.astro';
+import Timeline from '../components/Timeline.astro';
+import { canRead, isOwner, preventCaching } from '../lib/auth';
+import { findRestricted, restrictedData } from '../lib/private-store';
+import { canonicalPath, comments, getEntries, headings, ordered, site, stamp, stripTags, terms } from '../lib/site';
+import type { Entry } from '../lib/types';
+
+const entries = await getEntries();
+const route = canonicalPath(Astro.url.pathname);
+const owner = isOwner(Astro.cookies);
+const search = Astro.url.searchParams;
+const legacy = route === '/' ? (search.get('p') ?? search.get('page_id')) : null;
+const legacyId = legacy && /^\d+$/.test(legacy) ? legacy : null;
+const restricted = await restrictedData();
+const privateEntry = findRestricted(restricted, route, legacyId);
+const publicEntry = entries.find((item) => canonicalPath(item.path) === route || (legacyId && String(item.id) === legacyId));
+const allowed = privateEntry ? canRead(privateEntry, Astro.cookies) : false;
+const passwordPage = Boolean(privateEntry?.visibility === 'password' && !allowed);
+const missingPrivate = Boolean(privateEntry?.visibility === 'private' && !allowed);
+const entry = privateEntry ? (allowed || passwordPage ? privateEntry : undefined) : publicEntry;
+if (owner || privateEntry || route.startsWith('/auth/')) preventCaching(Astro.response.headers);
+if (entry && legacyId && !privateEntry) return Astro.redirect(entry.path, 301);
+
+const baseRoute = route.replace(/\/page\/(\d+)\/$/, '/');
+const page = Number(route.match(/\/page\/(\d+)\/$/)?.[1] ?? 1);
+const pageSize = Math.max(1, site.posts_per_page);
+const home = baseRoute === '/' && !search.has('s') && !legacyId;
+const term = [...terms.category, ...terms.post_tag].find((item) => canonicalPath(item.url) === baseRoute);
+const archive = baseRoute.match(/^\/(\d{4})(?:\/(\d{2})(?:\/(\d{2}))?)?\/$/);
+const searchPage = baseRoute === '/' && search.has('s');
+const query = search.get('s')?.trim().slice(0, 200) ?? '';
+const supported = ['post', 'page', 'shuoshuo'] as const;
+const chosen = search.get('post_type')?.split(',') ?? search.getAll('type');
+const types = chosen.length ? supported.filter((type) => chosen.includes(type)) : ['post', 'page'];
+const publicPreviews = ordered([...entries, ...restricted.posts.filter((item) => item.visibility === 'password').map((item) => ({
+  id: item.id, type: item.type, title: item.title, path: item.path, published: item.published,
+  excerpt: '', html: '', visibility: 'password' as const,
+}))]);
+const articles = publicPreviews.filter((item) => item.type === 'post');
+const talks = publicPreviews.filter((item) => item.type === 'shuoshuo');
+const talkPage = entry?.template === 'shuoshuo.php' || (!entry && route === '/shuoshuo/');
+const timeline = entry?.template === 'timeline.php' || (!entry && route === '/archive/');
+const guestbook = entry?.template === 'msgboard.php';
+const list = !entry && (home || Boolean(term || archive || searchPage));
+const matching = list ? (
+  searchPage ? entries.filter((item) => types.includes(item.type) && query && query.toLocaleLowerCase().split(/\s+/).every((word) =>
+    (item.title + ' ' + stripTags(item.html)).toLocaleLowerCase().includes(word)))
+  : term ? entries.filter((item) => (item.categories?.includes(term.id) || item.tags?.includes(term.id)))
+  : archive ? articles.filter((item) => {
+      const date = stamp(item.published);
+      return date.year === archive[1] && (!archive[2] || date.month.padStart(2, '0') === archive[2]) &&
+        (!archive[3] || date.day.padStart(2, '0') === archive[3]);
+    })
+  : publicPreviews.filter((item) => item.type !== 'page')
+) : [];
+const total = Math.max(1, Math.ceil(matching.length / pageSize));
+const found = !missingPrivate && Boolean(entry || talkPage || timeline || (list && page >= 1 && page <= total));
+if (!found) {
+  Astro.response.status = 404;
+  preventCaching(Astro.response.headers);
+}
+const displayed = matching.slice((page - 1) * pageSize, page * pageSize);
+const entryTitle = passwordPage ? '密码保护：' + entry?.title : entry?.title;
+const title = !found ? '找不到页面' : entryTitle ?? (searchPage ? '搜索结果' : term?.name ?? (archive ? '归档 ' + archive.slice(1).filter(Boolean).join('年').replace(/年(\d\d)年/, '年$1月') : talkPage ? '碎碎念' : timeline ? '归档' : undefined));
+const markdown = entry && typeof entry.id === 'string' ? await getEntry('posts', entry.id) : undefined;
+const Content = markdown ? (await render(markdown)).Content : undefined;
+const article = entry && !passwordPage && !Content
+  ? headings(entry.html, 'post-' + entry.id)
+  : { html: '', links: [] };
+const visibleComments = entry && !passwordPage ? [
+  ...comments.filter((item) => item.post_id === entry.id),
+  ...restricted.comments.filter((item) => item.post_id === entry.id && (!item.ownerOnly || owner)),
+] : [];
+const commentsFor = (id: Entry['id']) => comments.filter((item) => item.post_id === id).length;
+const isArticle = entry?.type === 'post';
+const related = isArticle ? articles.filter((item) => item.id !== entry?.id && !item.visibility).slice(0, 3) : [];
+const querySuffix = searchPage ? '?s=' + encodeURIComponent(query) + '&post_type=' + types.join(',') : '';
+---
+<Layout title={title} entries={entries} owner={owner} restricted={Boolean(privateEntry) || !found}
+  home={home && found} list={list && found} progress={Boolean(entry && !passwordPage && !talkPage && !timeline && !guestbook)}
+  headings={article.links} description={entry && !privateEntry ? stripTags(entry.excerpt) : undefined}>
+  <div slot="information" class="page-information-card-container">
+    {list && !home && found && <div class="page-information-card card bg-gradient-secondary shadow-lg border-0"><div class="card-body">
+      <h1 class="page-information-card-title">{title}{searchPage && query ? ' · ' + query : ''}</h1>
+      {searchPage && <form action="/" method="get" data-astro-reload class="argon-search-filters">
+        <input type="hidden" name="s" value={query} />
+        {supported.map((type, index) => <label><input name="type" value={type} type="checkbox" checked={types.includes(type)} /> {['文章','页面','说说'][index]}</label>)}
+        <button class="btn btn-sm btn-outline-primary" type="submit">筛选</button>
+      </form>}
+    </div></div>}
+  </div>
+  {!found ? <article class="post card bg-white shadow-sm border-0"><div class="card-body">
+    <h1 class="post-title">找不到页面</h1><a class="btn btn-outline-primary mt-3" href="/">返回首页</a>
+  </div></article> : passwordPage && entry ? <article class="post card bg-white shadow-sm border-0 astro-form-card"><div class="card-body">
+    <h1 class="post-title">{entryTitle}</h1><p>此内容受密码保护。</p>
+    {search.has('error') && <p role="alert">密码不正确。</p>}
+    <form action="/auth/action/" method="post" data-astro-reload>
+      <input type="hidden" name="intent" value="unlock" /><input type="hidden" name="id" value={entry.id} />
+      <label for="entry-password">文章密码</label><input id="entry-password" class="form-control" type="password" name="password" maxlength="512" required />
+      <button class="btn btn-primary mt-3" type="submit">查看内容</button>
+    </form>
+  </div></article> : talkPage ? <>
+    {talks.map((item) => <EntryCard entry={item} fullTalk commentCount={commentsFor(item.id)} />)}
+  </> : timeline ? <article class="post post-full card bg-white shadow-sm border-0">
+    <header class="post-header text-center"><h1 class="post-title">{title}</h1></header>
+    <div class="post-content"><Timeline entries={articles} /></div>
+  </article> : entry ? <>
+    <article class:list={['post post-full card bg-white shadow-sm border-0', { 'shuoshuo-main': entry.type === 'shuoshuo' }]} id={'post-' + entry.id}>
+      <header class="post-header text-center">
+        {entry.featuredImage && <div class="post-thumbnail astro-article-cover" style={'background-image:url("' + entry.featuredImage + '")'} />}
+        <h1 class="post-title">{entry.title}</h1>
+        {entry.type !== 'page' && <PostMeta entry={entry} readStats={isArticle} />}
+      </header>
+      <div class:list={['post-content', { 'shuoshuo-content': entry.type === 'shuoshuo' }]} id="post_content" data-article>
+        {Content ? <Content /> : <Fragment set:html={article.html} />}
+      </div>
+      {isArticle && <div class="astro-article-footer">
+        {(entry.tags?.length ?? 0) > 0 && terms.post_tag.filter((term) => entry.tags?.includes(term.id)).map((term) => <a class="badge badge-primary mr-2" href={term.url}>#{term.name}</a>)}
+        <button class="btn btn-sm btn-outline-primary" type="button" data-copy-link><i class="fa fa-share-alt" aria-hidden="true"></i> 复制链接</button>
+      </div>}
+    </article>
+    {related.length > 0 && <div class="card bg-white shadow-sm border-0 astro-related">
+      <div class="card-body"><h5>相关文章</h5>{related.map((item) => <a href={item.path}>{item.title}</a>)}</div>
+    </div>}
+    {(guestbook || isArticle || entry.type === 'shuoshuo' || visibleComments.length > 0) && <CommentList items={visibleComments} guestbook={guestbook} />}
+  </> : <>
+    {displayed.map((item) => <EntryCard entry={item} commentCount={commentsFor(item.id)} />)}
+    {!displayed.length && <article class="post card bg-white shadow-sm border-0"><div class="card-body">没有找到相关内容。</div></article>}
+    <Pagination current={page} total={total} base={baseRoute} query={querySuffix} />
+  </>}
+</Layout>

@@ -1,0 +1,18 @@
+---
+import { articleStats, stamp, terms } from '../lib/site';
+import type { Entry } from '../lib/types';
+
+const { entry, readStats = true } = Astro.props as { entry: Entry; readStats?: boolean };
+const date = stamp(entry.published);
+const updated = entry.updated ? stamp(entry.updated) : null;
+const stats = articleStats(entry);
+const cats = terms.category.filter((term) => entry.categories?.includes(term.id));
+const pretty = (value: typeof date) => value.year + '-' + value.month + '-' + value.day + ' ' + value.time;
+---
+<div class="post-meta">
+  <div class="post-meta-detail post-meta-detail-time"><i class="fa fa-clock-o" aria-hidden="true"></i> <time datetime={entry.published}>{pretty(date)}</time></div>
+  {entry.views != null && <><span class="post-meta-devide">|</span><div class="post-meta-detail post-meta-detail-views"><i class="fa fa-eye" aria-hidden="true"></i> {entry.views}</div></>}
+  {cats.length > 0 && <><span class="post-meta-devide">|</span><div class="post-meta-detail post-meta-detail-categories"><i class="fa fa-bookmark-o" aria-hidden="true"></i> {cats.map((term) => <a class="post-meta-detail-catagory-link" href={term.url}>{term.name}</a>)}</div></>}
+  {updated && entry.updated !== entry.published && <><span class="post-meta-devide">|</span><div class="post-meta-detail post-meta-detail-edittime"><i class="fa fa-clock-o" aria-hidden="true"></i> <time datetime={entry.updated}>{pretty(updated)}</time></div></>}
+  {readStats && <><br /><div class="post-meta-detail post-meta-detail-words"><i class="fa fa-file-word-o" aria-hidden="true"></i> {stats.words} 字</div><span class="post-meta-devide">|</span><div class="post-meta-detail post-meta-detail-words"><i class="fa fa-hourglass-end" aria-hidden="true"></i> {stats.minutes} 分钟</div></>}
+</div>

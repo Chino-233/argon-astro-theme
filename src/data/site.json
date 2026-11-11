@@ -1,0 +1,117 @@
+{
+  "site": {
+    "url": "https://example.com/",
+    "title": "Argon Astro",
+    "description": "Argon 主题的 Astro 移植版",
+    "language": "zh-Hans",
+    "timezone": "Asia/Shanghai",
+    "site_icon": "",
+    "posts_per_page": 10
+  },
+  "argon": {
+    "argon_page_layout": "double",
+    "argon_banner_size": "fullscreen",
+    "argon_banner_title": "Argon Astro",
+    "argon_banner_subtitle": "简洁的博客主题",
+    "argon_banner_background_color_type": "shape-primary",
+    "argon_sidebar_banner_title": "Argon",
+    "argon_sidebar_banner_subtitle": "Astro 主题",
+    "argon_sidebar_auther_name": "示例作者",
+    "argon_theme_color": "#5e72e4",
+    "argon_card_radius": "4",
+    "argon_article_list_layout": "2",
+    "argon_fab_show_settings_button": "true",
+    "argon_fab_show_darkmode_button": "true",
+    "argon_enable_amoled_dark": "true",
+    "argon_enable_zoomify": "true",
+    "argon_enable_code_highlight": "true",
+    "argon_math_render": "katex",
+    "argon_show_headindex_number": "true",
+    "argon_enable_pangu": "article|shuoshuo|comment",
+    "argon_show_customize_theme_color_picker": "true"
+  },
+  "menus": {
+    "toolbar_menu": [
+      {
+        "id": 1,
+        "parent": 0,
+        "title": "<i class=\"fa fa-home\" aria-hidden=\"true\"></i> 首页",
+        "url": "/",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 2,
+        "parent": 0,
+        "title": "<i class=\"fa fa-comment-o\" aria-hidden=\"true\"></i> 说说",
+        "url": "/shuoshuo/",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 3,
+        "parent": 0,
+        "title": "<i class=\"fa fa-clock-o\" aria-hidden=\"true\"></i> 归档",
+        "url": "/archive/",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 4,
+        "parent": 0,
+        "title": "<i class=\"fa fa-info-circle\" aria-hidden=\"true\"></i> 关于",
+        "url": "/about/",
+        "target": "",
+        "classes": []
+      }
+    ],
+    "leftbar_menu": [
+      {
+        "id": 1,
+        "parent": 0,
+        "title": "<i class=\"fa fa-home\" aria-hidden=\"true\"></i> 首页",
+        "url": "/",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 2,
+        "parent": 0,
+        "title": "<i class=\"fa fa-comment-o\" aria-hidden=\"true\"></i> 说说",
+        "url": "/shuoshuo/",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 3,
+        "parent": 0,
+        "title": "<i class=\"fa fa-clock-o\" aria-hidden=\"true\"></i> 归档",
+        "url": "/archive/",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 4,
+        "parent": 0,
+        "title": "<i class=\"fa fa-info-circle\" aria-hidden=\"true\"></i> 关于",
+        "url": "/about/",
+        "target": "",
+        "classes": []
+      }
+    ]
+  },
+  "terms": {
+    "category": [
+      {
+        "id": 10,
+        "parent": 0,
+        "name": "随笔",
+        "slug": "notes",
+        "description": "",
+        "url": "/category/notes/"
+      }
+    ],
+    "post_tag": []
+  },
+  "customCss": ""
+}

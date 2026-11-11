@@ -1,0 +1,53 @@
+---
+import { canonicalPath, menus, safeLink, site } from '../lib/site';
+
+const items = menus.toolbar_menu ?? [];
+const current = canonicalPath(Astro.url.pathname);
+---
+<div id="toolbar">
+  <header class="header-global">
+    <nav id="navbar-main" class="navbar navbar-main navbar-expand-lg navbar-transparent navbar-light bg-primary navbar-ontop">
+      <div class="container">
+        <button id="open_sidebar" class="navbar-toggler" type="button" aria-expanded="false" aria-controls="leftbar" aria-label="打开侧栏">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="navbar-brand mr-0">
+          <a class="navbar-brand navbar-title" href="/">{site.title}</a>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar_global">
+          <ul class="navbar-nav navbar-nav-hover align-items-lg-center">
+            {items.map((item) => (
+              <li class="nav-item">
+                <a href={safeLink(item.url)} class="nav-link" target={item.target || undefined} aria-current={canonicalPath(item.url) === current ? 'page' : undefined}>
+                  <span class="nav-link-inner--text" set:html={item.title} />
+                </a>
+              </li>
+            ))}
+          </ul>
+          <ul class="navbar-nav align-items-lg-center ml-lg-auto">
+            <li id="navbar_search_container" class="nav-item">
+              <form id="navbar_search_input_container" action="/" method="get" data-astro-reload>
+                <div class="input-group input-group-alternative">
+                  <span class="input-group-prepend"><span class="input-group-text"><i class="fa fa-search" aria-hidden="true"></i></span></span>
+                  <input id="navbar_search_input" class="form-control" name="s" placeholder="搜索什么..." aria-label="搜索" autocomplete="off" />
+                </div>
+              </form>
+            </li>
+          </ul>
+        </div>
+        <button class="navbar-toggler d-lg-none" type="button" data-open-dialog="argon_search_modal" aria-label="搜索"><i class="fa fa-search" aria-hidden="true"></i></button>
+      </div>
+    </nav>
+  </header>
+</div>
+<dialog id="argon_search_modal" class="argon-dialog">
+  <div class="card-body">
+    <div class="argon-dialog-title"><h5>搜索</h5><button type="button" class="argon-close" data-close-dialog aria-label="关闭">×</button></div>
+    <form action="/" method="get" data-astro-reload>
+      <div class="input-group">
+        <input class="form-control" name="s" placeholder="搜索什么..." aria-label="搜索" autocomplete="off" required />
+        <button class="btn btn-primary" type="submit">搜索</button>
+      </div>
+    </form>
+  </div>
+</dialog>

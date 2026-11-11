@@ -1,0 +1,13 @@
+---
+const { current, total, base = '/', query = '' } = Astro.props as { current: number; total: number; base?: string; query?: string };
+const pageLink = (page: number) => (page <= 1 ? base : base + 'page/' + page + '/') + query;
+---
+{total > 1 && <nav class="pagination-container" aria-label="分页">
+  <ul class="pagination justify-content-center">
+    {current > 1 && <li class="page-item"><a class="page-link" href={pageLink(current - 1)} aria-label="上一页"><i class="fa fa-angle-left"></i></a></li>}
+    {Array.from({ length: total }, (_, i) => i + 1).map((page) => <li class:list={['page-item', { active: page === current }]}>
+      <a class="page-link" href={pageLink(page)} aria-current={page === current ? 'page' : undefined}>{page}</a>
+    </li>)}
+    {current < total && <li class="page-item"><a class="page-link" href={pageLink(current + 1)} aria-label="下一页"><i class="fa fa-angle-right"></i></a></li>}
+  </ul>
+</nav>}

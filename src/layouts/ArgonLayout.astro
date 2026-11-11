@@ -1,0 +1,106 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import Nav from '../components/Nav.astro';
+import Sidebar from '../components/Sidebar.astro';
+import Footer from '../components/Footer.astro';
+import ThemeControls from '../components/ThemeControls.astro';
+import { customCss, option, site } from '../lib/site';
+import type { Entry } from '../lib/types';
+import '../styles/argon-port.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  entries: Entry[];
+  headings?: Array<{ id: string; label: string; depth: number }>;
+  list?: boolean;
+  home?: boolean;
+  owner?: boolean;
+  restricted?: boolean;
+  progress?: boolean;
+}
+const { title, description, entries, headings, list = false, home = false, owner = false, restricted = false, progress = false } = Astro.props;
+const pageTitle = title ? title + ' – ' + site.title : site.title + ' – ' + site.description;
+const canonical = new URL(Astro.url.pathname, site.url).href;
+const layout = option('page_layout', 'double');
+const cover = option('banner_size') === 'fullscreen';
+const transparent = option('page_background_banner_style') === 'transparent';
+const color = option('theme_color', '#5e72e4');
+const rgb = /^#[\da-f]{6}$/i.test(color) ? color.slice(1).match(/.{2}/g)!.map((value) => parseInt(value, 16)) : [94, 114, 228];
+const darkImage = option('page_background_dark_url', option('page_background_url'));
+const imageVar = (value: string) => value ? 'url(' + JSON.stringify(value) + ')' : 'none';
+const css = {
+  '--themecolor': color, '--themecolor-R': rgb[0], '--themecolor-G': rgb[1], '--themecolor-B': rgb[2],
+  '--themecolor-H': 200, '--themecolor-S': 76, '--themecolor-L': 62,
+  '--card-radius': Number(option('card_radius', '4')) + 'px',
+  '--argon-banner-image': imageVar(option('banner_background_url')),
+  '--argon-background': imageVar(option('page_background_url')),
+  '--argon-background-dark': imageVar(darkImage),
+  '--argon-background-opacity': option('page_background_opacity', '1'),
+};
+const defaultMode = option('darkmode_autoswitch', 'false');
+---
+<!doctype html>
+<html lang={site.language} class:list={[
+  option('article_header_style', 'article-header-style-2'),
+  { 'banner-as-cover': cover, 'toolbar-blur': option('toolbar_blur') === 'true',
+    'single-column': layout === 'single', 'triple-column': layout === 'triple',
+    'double-column-reverse': layout === 'double-reverse', 'transparent-banner': transparent },
+]} style={css} data-mode={defaultMode} data-font={option('font', 'sans-serif')} data-shadow={option('card_shadow', 'default')}
+  data-radius={option('card_radius', '4')} data-color={color} data-katex={option('math_render') === 'katex'} data-started-at={site.started_at}
+  data-highlight={option('enable_code_highlight') === 'true'} data-zoom={option('enable_zoomify') === 'true'} data-pangu={option('enable_pangu')}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description ?? site.description} />
+    {restricted ? <meta name="robots" content="noindex,nofollow" /> : <link rel="canonical" href={canonical} />}
+    {site.site_icon && <link rel="icon" href={site.site_icon} />}
+    <link rel="alternate" type="application/rss+xml" title={site.title} href="/feed/" />
+    <link rel="stylesheet" href="/assets/argon/argon_css_merged.css" />
+    <link rel="stylesheet" href="/assets/argon/style.css" />
+    {option('enable_code_highlight') === 'true' && <link rel="stylesheet" href="/assets/argon/highlight.css" />}
+    {customCss && <style is:inline set:html={customCss} />}
+    {option('pjax_disabled') !== 'true' && <ClientRouter fallback="none" />}
+    <script is:inline>
+      try {
+        const root = document.documentElement;
+        const prefs = JSON.parse(localStorage.getItem('argon-astro-prefs') || '{}');
+        const mode = prefs.mode || root.dataset.mode;
+        const dark = ['dark', 'black', 'alwayson'].includes(mode) ||
+          (mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches) ||
+          (mode === 'time' && (new Date().getHours() >= 19 || new Date().getHours() < 7));
+        root.classList.toggle('darkmode', dark);
+        root.classList.toggle('amoled-dark', mode === 'black');
+      } catch {}
+    </script>
+  </head>
+  <body class:list={[{ home, blog: home }, 'argon-astro']}>
+    <Nav />
+    <section id="banner" class="banner section section-lg section-shaped">
+      {option('banner_background_hide_shapes') !== 'true' && <div class:list={['shape shape-style-1', option('banner_background_color_type', 'shape-primary')]} aria-hidden="true">
+        {Array.from({ length: 9 }, () => <span></span>)}
+      </div>}
+      <div id="banner_container" class="banner-container container text-center">
+        <div class="banner-title text-white" data-type-banner={option('enable_banner_title_typing_effect') === 'true' ? option('banner_typing_effect_interval', '100') : undefined}>
+          <span class="banner-title-inner">{option('banner_title', site.title)}</span>
+          <span class="banner-subtitle d-block">{option('banner_subtitle', site.description)}</span>
+        </div>
+      </div>
+      {cover && <button class="cover-scroll-down" type="button" data-scroll-content aria-label="浏览内容"><i class="fa fa-angle-down" aria-hidden="true"></i></button>}
+    </section>
+    <ThemeControls showProgress={progress} />
+    <div id="content" class="site-content">
+      <slot name="information" />
+      <Sidebar entries={entries} headings={headings} />
+      <div id="primary" class="content-area">
+        <main id="main" class:list={['site-main', { 'article-list': list, 'article-list-home': list && home }]}>
+          <slot />
+          <Footer owner={owner} />
+        </main>
+      </div>
+    </div>
+    <dialog id="argon_image_preview" class="image-preview"><button class="argon-close" type="button" data-close-dialog aria-label="关闭">×</button><img alt="" /></dialog>
+    <script src="../scripts/browser.ts"></script>
+  </body>
+</html>

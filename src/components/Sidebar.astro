@@ -1,0 +1,109 @@
+---
+import { canonicalPath, menus, option, safeLink, terms } from '../lib/site';
+import type { Entry } from '../lib/types';
+
+interface Props {
+  entries: Entry[];
+  headings?: Array<{ id: string; label: string; depth: number }>;
+}
+const { entries, headings = [] } = Astro.props;
+const current = canonicalPath(Astro.url.pathname);
+const items = menus.leftbar_menu ?? [];
+const count = entries.filter((entry) => entry.type === 'post').length;
+const archive = entries.find((entry) => entry.template === 'timeline.php')?.path ?? '/archive/';
+const panels = [...(headings.length ? [['catalog', '文章目录']] : []), ['overview', '站点概览'], ['tools', '功能']];
+const announcement = option('sidebar_announcement');
+---
+<button id="sidebar_mask" type="button" aria-label="关闭侧栏"></button>
+<aside id="leftbar" class="leftbar widget-area" aria-label="侧栏">
+  {announcement && (
+    <div id="leftbar_announcement" class="card bg-white shadow-sm border-0">
+      <div class="leftbar-announcement-body">
+        <div class="leftbar-announcement-title text-white">公告</div>
+        <div class="leftbar-announcement-content text-white" set:html={announcement} />
+      </div>
+    </div>
+  )}
+  <div id="leftbar_part1" class="widget widget_search card bg-white shadow-sm border-0">
+    <div class="leftbar-banner card-body">
+      <span class="leftbar-banner-title text-white">{option('sidebar_banner_title')}</span>
+      <span class="leftbar-banner-subtitle text-white">{option('sidebar_banner_subtitle')}</span>
+    </div>
+    <ul id="leftbar_part1_menu" class="leftbar-menu">
+      {items.map((item) => (
+        <li class:list={['leftbar-menu-item', { current: canonicalPath(item.url) === current }]}>
+          <a href={safeLink(item.url)} target={item.target || undefined} set:html={item.title} />
+        </li>
+      ))}
+    </ul>
+    <div class="card-body text-center leftbar-search-button">
+      <button id="leftbar_search_container" type="button" class="btn btn-secondary btn-lg active btn-sm btn-block border-0" data-open-dialog="argon_search_modal">
+        <i class="menu-item-icon fa fa-search mr-0" aria-hidden="true"></i> 搜索
+      </button>
+    </div>
+  </div>
+  <div id="leftbar_part2" class="widget widget_search card bg-white shadow-sm border-0">
+    <div id="leftbar_part2_inner" class="card-body">
+      <div class="nav-wrapper" style="padding-top:5px">
+        <ul class="nav nav-pills nav-fill" role="tablist">
+          {panels.map(([id, label], i) => (
+            <li class="nav-item sidebar-tab-switcher" role="presentation">
+              <a id={'leftbar_tab_' + id + '_btn'} class:list={[{ active: i === 0, show: i === 0 }]} href={'#leftbar_tab_' + id}
+                data-sidebar-tab={id} role="tab" aria-controls={'leftbar_tab_' + id} aria-selected={i === 0}>{label}</a>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div class="tab-content" style="padding:10px 10px 0">
+        {headings.length > 0 && (
+          <div class="tab-pane fade active show" id="leftbar_tab_catalog" role="tabpanel" aria-labelledby="leftbar_tab_catalog_btn">
+            <nav id="leftbar_catalog" aria-label="文章目录">
+              <ol class="astro-toc">
+                {headings.map(({ id, label, depth }, i) => (
+                  <li style={'--toc-depth:' + Math.max(0, depth - headings[0].depth)}>
+                    <a href={'#' + encodeURIComponent(id)}>
+                      {option('show_headindex_number') === 'true' && <span>{i + 1}. </span>}{label}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          </div>
+        )}
+        <div class:list={['tab-pane fade text-center', { active: !headings.length, show: !headings.length }]} id="leftbar_tab_overview" role="tabpanel" aria-labelledby="leftbar_tab_overview_btn">
+          {option('sidebar_auther_image') && <div id="leftbar_overview_author_image" class="rounded-circle shadow-sm" role="img" aria-label="作者头像" style={'background-image:url("' + option('sidebar_auther_image') + '")'} />}
+          <h6 id="leftbar_overview_author_name">{option('sidebar_auther_name')}</h6>
+          <h6 id="leftbar_overview_author_description">{option('sidebar_author_description')}</h6>
+          <nav class="site-state" aria-label="站点统计">
+            <div class="site-state-item site-state-posts">
+              <a href={archive}><span class="site-state-item-count">{count}</span><span class="site-state-item-name">文章</span></a>
+            </div>
+            {([['category', '分类', 'blog_categories'], ['post_tag', '标签', 'blog_tags']] as const).map(([tax, name, id]) => (
+              <div class:list={['site-state-item', tax === 'category' ? 'site-state-categories' : 'site-state-tags']}>
+                <a href={'#' + id} data-open-dialog={id}><span class="site-state-item-count">{terms[tax].length}</span><span class="site-state-item-name">{name}</span></a>
+              </div>
+            ))}
+          </nav>
+          <div style="height:20px"></div>
+        </div>
+        <div class="tab-pane fade" id="leftbar_tab_tools" role="tabpanel" aria-labelledby="leftbar_tab_tools_btn">
+          <div class="progress-wrapper p-0">
+            <div class="progress-info">
+              <div class="progress-label"><span id="yearprogress_yearname"></span></div>
+              <div id="yearprogress_text_container" class="progress-percentage"><span id="yearprogress_progresstext"></span><span id="yearprogress_progresstext_full"></span></div>
+            </div>
+            <div class="progress"><div id="yearprogress_progressbar" class="progress-bar bg-primary"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
+{([['category', '分类', 'blog_categories'], ['post_tag', '标签', 'blog_tags']] as const).map(([tax, label, id]) => (
+  <dialog class="argon-dialog" id={id}>
+    <div class="card-body">
+      <div class="argon-dialog-title"><h5>{label}</h5><button class="argon-close" data-close-dialog type="button" aria-label="关闭">×</button></div>
+      {terms[tax].map((term) => <a class="btn btn-outline-primary btn-sm mr-2 mb-2" href={term.url}>{term.name} {entries.filter((entry) => (tax === 'category' ? entry.categories : entry.tags)?.includes(term.id)).length}</a>)}
+    </div>
+  </dialog>
+))}

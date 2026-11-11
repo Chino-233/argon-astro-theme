@@ -1,0 +1,25 @@
+{
+  "name": "argon-astro-theme",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env node_modules/astro/bin/astro.mjs dev",
+    "build": "astro build",
+    "preview": "node --env-file-if-exists=.env node_modules/astro/bin/astro.mjs preview",
+    "start": "node --env-file-if-exists=.env dist/server/entry.mjs",
+    "admin:setup": "node scripts/setup-admin.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "10.1.4",
+    "astro": "6.4.8",
+    "katex": "^0.16.22"
+  },
+  "overrides": {
+    "unifont": "0.7.4"
+  }
+}

@@ -1,0 +1,44 @@
+---
+import { option, stamp, stripTags } from '../lib/site';
+import type { Entry } from '../lib/types';
+import PostMeta from './PostMeta.astro';
+
+interface Props { entry: Entry; fullTalk?: boolean; commentCount?: number }
+const { entry, fullTalk = false, commentCount = 0 } = Astro.props;
+const date = stamp(entry.published);
+const locked = entry.visibility === 'password';
+const title = locked ? '密码保护：' + entry.title : entry.title;
+const summary = stripTags(entry.excerpt || entry.html);
+const clipped = summary.length > 95 ? summary.slice(0, 95) + '…' : summary;
+const previewLayout = option('article_list_layout', '2');
+---
+{entry.type === 'shuoshuo' ? (
+  <div class:list={[fullTalk ? 'shuoshuo-container' : 'shuoshuo-preview-container card bg-white shadow-sm border-0', 'shuoshuo-foldable']} id={'post-' + entry.id}>
+    {fullTalk && <div class="shuoshuo-meta shadow-sm"><time datetime={entry.published}>{date.year} 年 {date.month} 月 {date.day} 日 · {date.time}</time></div>}
+    <article class:list={[fullTalk ? 'card shuoshuo-main bg-white shadow-sm border-0' : 'shuoshuo-preview', { 'post-password-required': locked }]}>
+      <a class="shuoshuo-title" href={entry.path}>{title}</a>
+      {locked ? <div class="shuoshuo-content"><p>此内容受密码保护。</p><a href={entry.path}>输入密码查看</a></div>
+        : <div class="shuoshuo-content" data-article set:html={entry.html} />}
+    </article>
+    <div class="shuoshuo-preview-meta">
+      <span><i class="fa fa-calendar-o" aria-hidden="true"></i> <time datetime={entry.published}>
+        <span class="shuoshuo-date-month">{date.month}</span> 月 <span class="shuoshuo-date-date">{date.day}</span> 日 , <span class="shuoshuo-date-year">{date.year}</span>
+      </time><span class="post-meta-devide">|</span><i class="fa fa-clock-o" aria-hidden="true"></i> <span class="shuoshuo-date-time">{date.time}</span></span>
+      {commentCount > 0 && <a class="ml-2" href={entry.path + '#post_comment'}><i class="fa fa-comment-o" aria-hidden="true"></i> {commentCount}</a>}
+    </div>
+    <a class="shuoshuo-preview-link btn btn-outline-primary btn-icon-only rounded-circle" href={entry.path} aria-label={'阅读 ' + entry.title}>
+      <span class="btn-inner--icon"><i class="fa fa-arrow-right" aria-hidden="true"></i></span>
+    </a>
+  </div>
+) : (
+  <article class:list={['post card bg-white shadow-sm border-0', 'post-preview-layout-' + previewLayout]} id={'post-' + entry.id}>
+    <header class:list={['post-header', { 'post-header-with-thumbnail': Boolean(entry.featuredImage) }]}>
+      {entry.featuredImage && <a class="post-thumbnail" aria-label={entry.title} href={entry.path} style={'background-image:url("' + entry.featuredImage + '")'} />}
+    </header>
+    <div class="post-content-container">
+      <a class="post-title" href={entry.path}>{title}</a>
+      {locked ? <div class="post-content">此内容受密码保护。</div> : clipped && <div class="post-content">{clipped}</div>}
+      <PostMeta entry={entry} readStats={!locked && entry.type === 'post'} />
+    </div>
+  </article>
+)}

@@ -1,0 +1,45 @@
+---
+import { option, safeLink, stamp } from '../lib/site';
+import type { Comment } from '../lib/types';
+const { items, guestbook = false } = Astro.props as { items: Comment[]; guestbook?: boolean };
+const index = new Map<number, Comment[]>();
+for (const item of items) {
+  const siblings = index.get(item.parent) ?? [];
+  siblings.push(item);
+  index.set(item.parent, siblings);
+}
+const list: Array<{ item: Comment; depth: number }> = [];
+const seen = new Set<number>();
+function append(item: Comment, depth: number) {
+  if (seen.has(item.id)) return;
+  seen.add(item.id);
+  list.push({ item, depth });
+  (index.get(item.id) ?? []).forEach((child) => append(child, depth + 1));
+}
+(index.get(0) ?? []).forEach((item) => append(item, 0));
+items.forEach((item) => append(item, 0));
+---
+<section id="post_comment" class="card shadow-sm border-0">
+  <h2 class="post-comment-title">{guestbook ? '留言' : '评论'}{items.length > 0 ? ' · ' + items.length : ''}</h2>
+  <ol class="comment-list astro-comment-list">
+    {list.map(({ item, depth }) => {
+      const date = stamp(item.date);
+      return <li class="comment-item" id={'comment-' + item.id} style={'--comment-depth:' + Math.min(depth, 4)}>
+        <div class="comment-item-inner">
+          {option('sidebar_auther_image') && item.author === option('sidebar_auther_name')
+            ? <img class="comment-item-avatar rounded-circle" src={option('sidebar_auther_image')} loading="lazy" alt="" />
+            : <span class="comment-item-avatar astro-comment-avatar rounded-circle" aria-hidden="true">{Array.from(item.author)[0] ?? '·'}</span>}
+          <div class="comment-item-main">
+            <div class="comment-item-meta">
+              <strong>{item.author_url ? <a href={safeLink(item.author_url)} rel="nofollow noopener noreferrer">{item.author}</a> : item.author}</strong>
+              <a class="comment-item-time" href={'#comment-' + item.id}>{date.year + '-' + date.month + '-' + date.day + ' ' + date.time}</a>
+              {item.ownerOnly && <span class="badge badge-secondary">悄悄话</span>}
+            </div>
+            <div class="comment-item-text" data-article set:html={item.html} />
+          </div>
+        </div>
+      </li>;
+    })}
+  </ol>
+  {!items.length && <p class="astro-comment-empty">暂无评论。</p>}
+</section>

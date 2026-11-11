@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "type": "shuoshuo",
+    "title": "一条说说示例",
+    "path": "/shuoshuo/hello/",
+    "published": "2026-01-02T09:00:00+08:00",
+    "html": "<p>说说可以和文章一起显示在首页，也有独立的时间线。</p>",
+    "excerpt": "",
+    "categories": [],
+    "tags": []
+  }
+]
