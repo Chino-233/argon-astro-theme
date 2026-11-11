@@ -14,6 +14,8 @@ export interface Entry {
   categories?: number[];
   tags?: number[];
   views?: string | number | null;
+  wordCount?: number;
+  readingTime?: string;
   visibility?: 'private' | 'password';
   passwordHash?: string | null;
   media?: string[];

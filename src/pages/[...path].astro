@@ -2,13 +2,13 @@
 import { getEntry, render } from 'astro:content';
 import Layout from '../layouts/ArgonLayout.astro';
 import EntryCard from '../components/EntryCard.astro';
-import PostMeta from '../components/PostMeta.astro';
+import EntryHeader from '../components/EntryHeader.astro';
 import CommentList from '../components/CommentList.astro';
 import Pagination from '../components/Pagination.astro';
 import Timeline from '../components/Timeline.astro';
 import { canRead, isOwner, preventCaching } from '../lib/auth';
 import { findRestricted, restrictedData } from '../lib/private-store';
-import { canonicalPath, comments, getEntries, headings, ordered, site, stamp, stripTags, terms } from '../lib/site';
+import { canonicalPath, comments, getEntries, headings, ordered, site, siteOptions, stamp, stripTags, terms } from '../lib/site';
 import type { Entry } from '../lib/types';
 
 const entries = await getEntries();
@@ -81,13 +81,18 @@ const commentsFor = (id: Entry['id']) => comments.filter((item) => item.post_id 
 const isArticle = entry?.type === 'post';
 const related = isArticle ? articles.filter((item) => item.id !== entry?.id && !item.visibility).slice(0, 3) : [];
 const querySuffix = searchPage ? '?s=' + encodeURIComponent(query) + '&post_type=' + types.join(',') : '';
+const option = siteOptions(Astro.locals.argonOverrides);
+const bannerImage = entry && !passwordPage && option('show_thumbnail_in_banner_in_content_page') === 'true' ? entry.featuredImage : undefined;
 ---
 <Layout title={title} entries={entries} owner={owner} restricted={Boolean(privateEntry) || !found}
   home={home && found} list={list && found} progress={Boolean(entry && !passwordPage && !talkPage && !timeline && !guestbook)}
-  headings={article.links} description={entry && !privateEntry ? stripTags(entry.excerpt) : undefined}>
+  headings={article.links} bannerImage={bannerImage} description={entry && !privateEntry ? stripTags(entry.excerpt) : undefined}>
   <div slot="information" class="page-information-card-container">
-    {list && !home && found && <div class="page-information-card card bg-gradient-secondary shadow-lg border-0"><div class="card-body">
-      <h1 class="page-information-card-title">{title}{searchPage && query ? ' · ' + query : ''}</h1>
+    {found && (talkPage || (list && !home)) && <div class="page-information-card card bg-gradient-secondary shadow-lg border-0"><div class="card-body">
+      <h1 class="page-information-card-title h3 text-black">{talkPage ? '说说' : title}{searchPage && query ? ' · ' + query : ''}</h1>
+      {talkPage && <p class="text-black mt-3 mb-0 opacity-8"><i class="fa fa-quote-left mr-1" aria-hidden="true"></i> {talks.length} 条说说</p>}
+      {term?.description && <p class="text-black mt-3 mb-0">{term.description}</p>}
+      {!talkPage && !searchPage && <p class="text-black mt-3 mb-0 opacity-8">{matching.length} 篇文章</p>}
       {searchPage && <form action="/" method="get" data-astro-reload class="argon-search-filters">
         <input type="hidden" name="s" value={query} />
         {supported.map((type, index) => <label><input name="type" value={type} type="checkbox" checked={types.includes(type)} /> {['文章','页面','说说'][index]}</label>)}
@@ -108,15 +113,11 @@ const querySuffix = searchPage ? '?s=' + encodeURIComponent(query) + '&post_type
   </div></article> : talkPage ? <>
     {talks.map((item) => <EntryCard entry={item} fullTalk commentCount={commentsFor(item.id)} />)}
   </> : timeline ? <article class="post post-full card bg-white shadow-sm border-0">
-    <header class="post-header text-center"><h1 class="post-title">{title}</h1></header>
+    {entry ? <EntryHeader entry={entry} readStats={false} bannerCover={Boolean(bannerImage)} /> : <header class="post-header text-center"><h1 class="astro-entry-title">{title}</h1></header>}
     <div class="post-content"><Timeline entries={articles} /></div>
   </article> : entry ? <>
     <article class:list={['post post-full card bg-white shadow-sm border-0', { 'shuoshuo-main': entry.type === 'shuoshuo' }]} id={'post-' + entry.id}>
-      <header class="post-header text-center">
-        {entry.featuredImage && <div class="post-thumbnail astro-article-cover" style={'background-image:url("' + entry.featuredImage + '")'} />}
-        <h1 class="post-title">{entry.title}</h1>
-        {entry.type !== 'page' && <PostMeta entry={entry} readStats={isArticle} />}
-      </header>
+      <EntryHeader entry={entry} commentCount={visibleComments.length} readStats={entry.type !== 'shuoshuo'} bannerCover={Boolean(bannerImage)} />
       <div class:list={['post-content', { 'shuoshuo-content': entry.type === 'shuoshuo' }]} id="post_content" data-article>
         {Content ? <Content /> : <Fragment set:html={article.html} />}
       </div>

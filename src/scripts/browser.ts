@@ -1,5 +1,6 @@
 import renderMathInElement from 'katex/contrib/auto-render';
 import 'katex/dist/katex.min.css';
+import { colorPalette } from '../lib/color';
 
 type Preferences = Partial<Record<'mode' | 'font' | 'shadow' | 'filter' | 'radius' | 'color', string>>;
 const key = 'argon-astro-prefs';
@@ -26,11 +27,10 @@ function applyPreferences() {
   root.dataset.selectedShadow = settings.shadow ?? root.dataset.shadow;
   root.dataset.filter = settings.filter ?? 'off';
   const radius = Number(settings.radius ?? root.dataset.radius);
-  if (Number.isFinite(radius) && radius >= 0 && radius <= 24) root.style.setProperty('--card-radius', radius + 'px');
+  if (Number.isFinite(radius) && radius >= 0 && radius <= 30) root.style.setProperty('--card-radius', radius + 'px');
   const color = settings.color ?? root.dataset.color ?? '';
   if (/^#[\da-f]{6}$/i.test(color)) {
-    root.style.setProperty('--themecolor', color);
-    ['R', 'G', 'B'].forEach((part, i) => root.style.setProperty('--themecolor-' + part, String(parseInt(color.slice(1 + i * 2, 3 + i * 2), 16))));
+    for (const [name, value] of Object.entries(colorPalette(color))) root.style.setProperty(name, value);
   }
   document.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-pref]').forEach((field) => {
     const name = field.name as keyof Preferences;

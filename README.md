@@ -22,6 +22,8 @@ npm run dev
 
 可选的站主登录位于 `/auth/`。用 `npm run admin:setup` 设置站主密码。若使用受限内容，另准备仓库外的运行目录并以 `npm run admin:setup -- --private-dir <路径>` 配置。受限目录中的 `entries.json` 使用 `{ "posts": [], "comments": [] }` 结构，文件放在 `uploads/`。条目的 `visibility` 可为 `private` 或 `password`，服务端会校验条目及其授权媒体。用于生产时，通过 HTTPS 访问。
 
+站主登录后访问 `/auth/argon/` 可以修改主题设置并导入或导出 JSON。后台修改默认保存在 Git 忽略的 `.argon-state/`，部署时可以用 `ARGON_STATE_DIR` 指定持久目录。
+
 ## 许可
 
 移植代码遵循 GPL-3.0，原主题与上游资源见 [solstice23/argon-theme](https://github.com/solstice23/argon-theme)。页脚保留 Argon 名称和链接。

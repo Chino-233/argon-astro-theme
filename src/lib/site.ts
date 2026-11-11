@@ -3,6 +3,7 @@ import data from '../data/site.json';
 import imported from '../data/posts.json';
 import history from '../data/comments.json';
 import type { Comment, Entry, MenuItem, Term } from './types';
+import { option as selectOption } from './argon-options';
 
 export const site = data.site as typeof data.site & { started_at?: string };
 export const theme = data.argon as Record<string, string | boolean | number>;
@@ -11,9 +12,8 @@ export const terms = data.terms as Record<'category' | 'post_tag', Term[]>;
 export const customCss = data.customCss;
 export const comments = history as Comment[];
 
-export function option(name: string, fallback = '') {
-  const value = theme['argon_' + name];
-  return value === undefined || value === null || value === '' ? fallback : String(value);
+export function siteOptions(overrides: Record<string, string>) {
+  return (name: string, fallback = '') => selectOption(overrides, theme, name, fallback);
 }
 
 export function canonicalPath(path: string) {

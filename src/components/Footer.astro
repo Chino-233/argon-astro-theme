@@ -1,5 +1,6 @@
 ---
-import { option } from '../lib/site';
+import { siteOptions } from '../lib/site';
+const option = siteOptions(Astro.locals.argonOverrides);
 const { owner = false } = Astro.props;
 ---
 <footer id="footer" class="site-footer card shadow-sm border-0">

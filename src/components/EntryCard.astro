@@ -1,5 +1,5 @@
 ---
-import { option, stamp, stripTags } from '../lib/site';
+import { siteOptions, stamp, stripTags } from '../lib/site';
 import type { Entry } from '../lib/types';
 import PostMeta from './PostMeta.astro';
 
@@ -10,6 +10,7 @@ const locked = entry.visibility === 'password';
 const title = locked ? '密码保护：' + entry.title : entry.title;
 const summary = stripTags(entry.excerpt || entry.html);
 const clipped = summary.length > 95 ? summary.slice(0, 95) + '…' : summary;
+const option = siteOptions(Astro.locals.argonOverrides);
 const previewLayout = option('article_list_layout', '2');
 ---
 {entry.type === 'shuoshuo' ? (
@@ -38,7 +39,7 @@ const previewLayout = option('article_list_layout', '2');
     <div class="post-content-container">
       <a class="post-title" href={entry.path}>{title}</a>
       {locked ? <div class="post-content">此内容受密码保护。</div> : clipped && <div class="post-content">{clipped}</div>}
-      <PostMeta entry={entry} readStats={!locked && entry.type === 'post'} />
+      <PostMeta entry={entry} commentCount={commentCount} readStats={!locked} />
     </div>
   </article>
 )}

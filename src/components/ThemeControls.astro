@@ -1,5 +1,6 @@
 ---
-import { option } from '../lib/site';
+import { siteOptions } from '../lib/site';
+const option = siteOptions(Astro.locals.argonOverrides);
 const { showProgress = false } = Astro.props;
 const settings = option('fab_show_settings_button', 'true') !== 'false';
 ---
@@ -17,7 +18,7 @@ const settings = option('fab_show_settings_button', 'true') !== 'false';
     <label>字体<select name="font" data-pref class="form-control"><option value="sans-serif">Sans Serif</option><option value="serif">Serif</option></select></label>
     <label>阴影<select name="shadow" data-pref class="form-control"><option value="default">默认</option><option value="small">浅阴影</option><option value="big">深阴影</option></select></label>
     <label>滤镜<select name="filter" data-pref class="form-control"><option value="off">关闭</option><option value="sunset">日落</option><option value="darkness">暗化</option><option value="grayscale">灰度</option></select></label>
-    <label>圆角<input name="radius" data-pref type="range" min="0" max="24" value={option('card_radius', '4')} /></label>
+    <label>圆角<input name="radius" data-pref type="range" min="0" max="30" step="0.5" value={option('card_radius', '4')} /></label>
     {option('show_customize_theme_color_picker') === 'true' && <label>主题色<input name="color" data-pref type="color" value={option('theme_color', '#5e72e4')} /></label>}
   </div>
 </dialog>}

@@ -1,7 +1,8 @@
 ---
-import { option, safeLink, stamp } from '../lib/site';
+import { siteOptions, safeLink, stamp } from '../lib/site';
 import type { Comment } from '../lib/types';
 const { items, guestbook = false } = Astro.props as { items: Comment[]; guestbook?: boolean };
+const option = siteOptions(Astro.locals.argonOverrides);
 const index = new Map<number, Comment[]>();
 for (const item of items) {
   const siblings = index.get(item.parent) ?? [];

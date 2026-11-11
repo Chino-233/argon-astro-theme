@@ -4,7 +4,8 @@ import Nav from '../components/Nav.astro';
 import Sidebar from '../components/Sidebar.astro';
 import Footer from '../components/Footer.astro';
 import ThemeControls from '../components/ThemeControls.astro';
-import { customCss, option, site } from '../lib/site';
+import { customCss, siteOptions, site } from '../lib/site';
+import { colorPalette } from '../lib/color';
 import type { Entry } from '../lib/types';
 import '../styles/argon-port.css';
 
@@ -18,27 +19,28 @@ interface Props {
   owner?: boolean;
   restricted?: boolean;
   progress?: boolean;
+  bannerImage?: string;
 }
-const { title, description, entries, headings, list = false, home = false, owner = false, restricted = false, progress = false } = Astro.props;
+const { title, description, entries, headings, list = false, home = false, owner = false, restricted = false, progress = false, bannerImage } = Astro.props;
+const option = siteOptions(Astro.locals.argonOverrides);
 const pageTitle = title ? title + ' – ' + site.title : site.title + ' – ' + site.description;
 const canonical = new URL(Astro.url.pathname, site.url).href;
 const layout = option('page_layout', 'double');
 const cover = option('banner_size') === 'fullscreen';
-const transparent = option('page_background_banner_style') === 'transparent';
+const transparent = !bannerImage && option('page_background_banner_style') === 'transparent';
 const color = option('theme_color', '#5e72e4');
-const rgb = /^#[\da-f]{6}$/i.test(color) ? color.slice(1).match(/.{2}/g)!.map((value) => parseInt(value, 16)) : [94, 114, 228];
 const darkImage = option('page_background_dark_url', option('page_background_url'));
 const imageVar = (value: string) => value ? 'url(' + JSON.stringify(value) + ')' : 'none';
 const css = {
-  '--themecolor': color, '--themecolor-R': rgb[0], '--themecolor-G': rgb[1], '--themecolor-B': rgb[2],
-  '--themecolor-H': 200, '--themecolor-S': 76, '--themecolor-L': 62,
+  ...colorPalette(color),
   '--card-radius': Number(option('card_radius', '4')) + 'px',
-  '--argon-banner-image': imageVar(option('banner_background_url')),
+  '--argon-banner-image': imageVar(bannerImage ?? option('banner_background_url')),
   '--argon-background': imageVar(option('page_background_url')),
   '--argon-background-dark': imageVar(darkImage),
   '--argon-background-opacity': option('page_background_opacity', '1'),
 };
 const defaultMode = option('darkmode_autoswitch', 'false');
+const configuredCss = Astro.locals.argonOverrides.argon_custom_css ?? customCss;
 ---
 <!doctype html>
 <html lang={site.language} class:list={[
@@ -60,7 +62,7 @@ const defaultMode = option('darkmode_autoswitch', 'false');
     <link rel="stylesheet" href="/assets/argon/argon_css_merged.css" />
     <link rel="stylesheet" href="/assets/argon/style.css" />
     {option('enable_code_highlight') === 'true' && <link rel="stylesheet" href="/assets/argon/highlight.css" />}
-    {customCss && <style is:inline set:html={customCss} />}
+    {configuredCss && <style is:inline set:html={configuredCss} />}
     {option('pjax_disabled') !== 'true' && <ClientRouter fallback="none" />}
     <script is:inline>
       try {

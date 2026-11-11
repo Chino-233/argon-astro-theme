@@ -1,5 +1,5 @@
 ---
-import { canonicalPath, menus, option, safeLink, terms } from '../lib/site';
+import { canonicalPath, menus, siteOptions, safeLink, terms } from '../lib/site';
 import type { Entry } from '../lib/types';
 
 interface Props {
@@ -12,6 +12,7 @@ const items = menus.leftbar_menu ?? [];
 const count = entries.filter((entry) => entry.type === 'post').length;
 const archive = entries.find((entry) => entry.template === 'timeline.php')?.path ?? '/archive/';
 const panels = [...(headings.length ? [['catalog', '文章目录']] : []), ['overview', '站点概览'], ['tools', '功能']];
+const option = siteOptions(Astro.locals.argonOverrides);
 const announcement = option('sidebar_announcement');
 ---
 <button id="sidebar_mask" type="button" aria-label="关闭侧栏"></button>
@@ -20,7 +21,9 @@ const announcement = option('sidebar_announcement');
     <div id="leftbar_announcement" class="card bg-white shadow-sm border-0">
       <div class="leftbar-announcement-body">
         <div class="leftbar-announcement-title text-white">公告</div>
-        <div class="leftbar-announcement-content text-white" set:html={announcement} />
+        <div class="leftbar-announcement-content text-white">
+          {Object.hasOwn(Astro.locals.argonOverrides, 'argon_sidebar_announcement') ? announcement : <Fragment set:html={announcement} />}
+        </div>
       </div>
     </div>
   )}

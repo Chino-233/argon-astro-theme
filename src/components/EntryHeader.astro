@@ -1,0 +1,21 @@
+---
+import PostMeta from './PostMeta.astro';
+import type { Entry } from '../lib/types';
+
+interface Props {
+  entry: Entry;
+  title?: string;
+  commentCount?: number;
+  readStats?: boolean;
+  bannerCover?: boolean;
+}
+const { entry, title = entry.title, commentCount = 0, readStats = true, bannerCover = false } = Astro.props;
+const image = !bannerCover && entry.featuredImage;
+---
+<header class:list={['post-header text-center', { 'post-header-with-thumbnail': Boolean(image) }]}>
+  {image && <img class="post-thumbnail" src={image} alt="" />}
+  <div class:list={[image ? 'post-header-text-container' : 'astro-header-text']}>
+    <h1 class="astro-entry-title"><a class="post-title" href={entry.path}>{title}</a></h1>
+    <PostMeta entry={entry} commentCount={commentCount} readStats={readStats} />
+  </div>
+</header>

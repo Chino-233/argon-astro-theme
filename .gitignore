@@ -3,6 +3,7 @@ dist/
 .astro/
 .migration/
 .npm-cache/
+.argon-state/
 .env
 .env.*
 !.env.example
