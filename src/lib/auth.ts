@@ -76,14 +76,16 @@ export async function verifyPassword(input: string, stored?: string | null) {
   return timingSafeEqual(expected, actual);
 }
 
-export function allowAttempt(client: string) {
+export function allowAttempt(client: string, scope = 'auth') {
   const now = Date.now();
   for (const [id, value] of limits) if (value.end <= now) limits.delete(id);
-  for (const [id, cap] of [['all', 30], ['ip:' + client, 6]] as const) {
+  const all = scope + ':all';
+  const ip = scope + ':ip:' + client;
+  for (const [id, cap] of [[all, 30], [ip, 6]] as const) {
     const value = limits.get(id);
     if (value && value.attempts >= cap) return false;
   }
-  for (const id of ['all', 'ip:' + client]) {
+  for (const id of [all, ip]) {
     const value = limits.get(id);
     limits.set(id, value ? { ...value, attempts: value.attempts + 1 } : { attempts: 1, end: now + 60_000 });
   }

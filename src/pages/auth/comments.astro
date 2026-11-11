@@ -1,0 +1,49 @@
+---
+import { isOwner, preventCaching } from '../../lib/auth';
+import { loadInteractions } from '../../lib/interactions';
+import { getEntries } from '../../lib/site';
+
+preventCaching(Astro.response.headers);
+if (!isOwner(Astro.cookies)) {
+  Astro.response.headers.set('Location', '/auth/?return=%2Fauth%2Fcomments%2F');
+  return new Response(null, { status: 303, headers: Astro.response.headers });
+}
+const [entries, interactions] = await Promise.all([getEntries(), loadInteractions()]);
+const pending = interactions.comments.filter((item) => item.status === 'pending');
+---
+<!doctype html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>留言审核</title>
+    <link rel="stylesheet" href="/assets/argon/argon_css_merged.css" />
+    <style>
+      body { background: #f5f7fb; }
+      main { max-width: 900px; margin: auto; padding: 32px 20px; }
+      article { margin-block: 14px; }
+      .message { overflow-wrap: anywhere; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p><a href="/auth/">返回站主管理</a></p>
+      <h1>留言审核</h1>
+      {!pending.length && <p>暂无待审核留言。</p>}
+      {pending.map((item) => {
+        const entry = entries.find((post) => post.id === item.post_id);
+        return <article class="card"><div class="card-body">
+          <h2 class="h5">{item.author}</h2>
+          {entry && <p><a href={entry.path}>{entry.title}</a></p>}
+          <div class="message" set:html={item.html} />
+          <form action="/interactions/" method="post">
+            <input type="hidden" name="comment_id" value={item.id} />
+            <button class="btn btn-primary btn-sm" name="action" value="approve" type="submit">通过</button>
+            <button class="btn btn-outline-danger btn-sm" name="action" value="reject" type="submit">拒绝</button>
+          </form>
+        </div></article>;
+      })}
+    </main>
+  </body>
+</html>

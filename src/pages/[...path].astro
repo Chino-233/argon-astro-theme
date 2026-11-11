@@ -4,10 +4,13 @@ import Layout from '../layouts/ArgonLayout.astro';
 import EntryCard from '../components/EntryCard.astro';
 import EntryHeader from '../components/EntryHeader.astro';
 import CommentList from '../components/CommentList.astro';
+import CommentForm from '../components/CommentForm.astro';
+import TalkCard from '../components/TalkCard.astro';
 import Pagination from '../components/Pagination.astro';
 import Timeline from '../components/Timeline.astro';
 import { canRead, isOwner, preventCaching } from '../lib/auth';
 import { findRestricted, restrictedData } from '../lib/private-store';
+import { allowsComments, loadInteractions, publicComments } from '../lib/interactions';
 import { canonicalPath, comments, getEntries, headings, ordered, site, siteOptions, stamp, stripTags, terms } from '../lib/site';
 import type { Entry } from '../lib/types';
 
@@ -47,6 +50,7 @@ const talks = publicPreviews.filter((item) => item.type === 'shuoshuo');
 const talkPage = entry?.template === 'shuoshuo.php' || (!entry && route === '/shuoshuo/');
 const timeline = entry?.template === 'timeline.php' || (!entry && route === '/archive/');
 const guestbook = entry?.template === 'msgboard.php';
+if (talkPage || entry?.type === 'shuoshuo') Astro.response.headers.set('Vary', 'Cookie');
 const list = !entry && (home || Boolean(term || archive || searchPage));
 const matching = list ? (
   searchPage ? entries.filter((item) => types.includes(item.type) && query && query.toLocaleLowerCase().split(/\s+/).every((word) =>
@@ -73,11 +77,15 @@ const Content = markdown ? (await render(markdown)).Content : undefined;
 const article = entry && !passwordPage && !Content
   ? headings(entry.html, 'post-' + entry.id)
   : { html: '', links: [] };
+const interactions = await loadInteractions();
+const allComments = [...comments, ...publicComments(interactions)];
+const commentsFor = (id: Entry['id']) => allComments.filter((item) => item.post_id === id);
 const visibleComments = entry && !passwordPage ? [
-  ...comments.filter((item) => item.post_id === entry.id),
+  ...commentsFor(entry.id),
   ...restricted.comments.filter((item) => item.post_id === entry.id && (!item.ownerOnly || owner)),
 ] : [];
-const commentsFor = (id: Entry['id']) => comments.filter((item) => item.post_id === id).length;
+const canComment = Boolean(entry && !passwordPage && allowsComments(entry));
+const likesFor = (id: Entry['id']) => interactions.likes[String(id)] ?? 0;
 const isArticle = entry?.type === 'post';
 const related = isArticle ? articles.filter((item) => item.id !== entry?.id && !item.visibility).slice(0, 3) : [];
 const querySuffix = searchPage ? '?s=' + encodeURIComponent(query) + '&post_type=' + types.join(',') : '';
@@ -85,7 +93,7 @@ const option = siteOptions(Astro.locals.argonOverrides);
 const bannerImage = entry && !passwordPage && option('show_thumbnail_in_banner_in_content_page') === 'true' ? entry.featuredImage : undefined;
 ---
 <Layout title={title} entries={entries} owner={owner} restricted={Boolean(privateEntry) || !found}
-  home={home && found} list={list && found} progress={Boolean(entry && !passwordPage && !talkPage && !timeline && !guestbook)}
+  home={home && found} list={list && found} progress={Boolean(entry && entry.type !== 'shuoshuo' && !passwordPage && !talkPage && !timeline && !guestbook)}
   headings={article.links} bannerImage={bannerImage} description={entry && !privateEntry ? stripTags(entry.excerpt) : undefined}>
   <div slot="information" class="page-information-card-container">
     {found && (talkPage || (list && !home)) && <div class="page-information-card card bg-gradient-secondary shadow-lg border-0"><div class="card-body">
@@ -111,27 +119,28 @@ const bannerImage = entry && !passwordPage && option('show_thumbnail_in_banner_i
       <button class="btn btn-primary mt-3" type="submit">查看内容</button>
     </form>
   </div></article> : talkPage ? <>
-    {talks.map((item) => <EntryCard entry={item} fullTalk commentCount={commentsFor(item.id)} />)}
+    {talks.map((item) => <TalkCard entry={item} preview comments={commentsFor(item.id)} extraLikes={likesFor(item.id)} allowReply={allowsComments(item)} />)}
   </> : timeline ? <article class="post post-full card bg-white shadow-sm border-0">
     {entry ? <EntryHeader entry={entry} readStats={false} bannerCover={Boolean(bannerImage)} /> : <header class="post-header text-center"><h1 class="astro-entry-title">{title}</h1></header>}
     <div class="post-content"><Timeline entries={articles} /></div>
   </article> : entry ? <>
-    <article class:list={['post post-full card bg-white shadow-sm border-0', { 'shuoshuo-main': entry.type === 'shuoshuo' }]} id={'post-' + entry.id}>
-      <EntryHeader entry={entry} commentCount={visibleComments.length} readStats={entry.type !== 'shuoshuo'} bannerCover={Boolean(bannerImage)} />
-      <div class:list={['post-content', { 'shuoshuo-content': entry.type === 'shuoshuo' }]} id="post_content" data-article>
+    {entry.type === 'shuoshuo' ? <TalkCard entry={{ ...entry, html: article.html || entry.html }} bodyComponent={Content} comments={visibleComments} extraLikes={likesFor(entry.id)} unlocked={allowed} /> : !guestbook && <article class="post post-full card bg-white shadow-sm border-0" id={'post-' + entry.id}>
+      <EntryHeader entry={entry} commentCount={visibleComments.length} bannerCover={Boolean(bannerImage)} />
+      <div class="post-content" id="post_content" data-article>
         {Content ? <Content /> : <Fragment set:html={article.html} />}
       </div>
       {isArticle && <div class="astro-article-footer">
         {(entry.tags?.length ?? 0) > 0 && terms.post_tag.filter((term) => entry.tags?.includes(term.id)).map((term) => <a class="badge badge-primary mr-2" href={term.url}>#{term.name}</a>)}
         <button class="btn btn-sm btn-outline-primary" type="button" data-copy-link><i class="fa fa-share-alt" aria-hidden="true"></i> 复制链接</button>
       </div>}
-    </article>
+    </article>}
     {related.length > 0 && <div class="card bg-white shadow-sm border-0 astro-related">
       <div class="card-body"><h5>相关文章</h5>{related.map((item) => <a href={item.path}>{item.title}</a>)}</div>
     </div>}
-    {(guestbook || isArticle || entry.type === 'shuoshuo' || visibleComments.length > 0) && <CommentList items={visibleComments} guestbook={guestbook} />}
+    {(guestbook || isArticle || entry.type === 'shuoshuo' || visibleComments.length > 0) && <CommentList items={visibleComments} guestbook={guestbook} reply={canComment} />}
+    {canComment && <CommentForm entry={entry} guestbook={guestbook} />}
   </> : <>
-    {displayed.map((item) => <EntryCard entry={item} commentCount={commentsFor(item.id)} />)}
+    {displayed.map((item) => <EntryCard entry={item} commentCount={commentsFor(item.id).length} extraLikes={likesFor(item.id)} />)}
     {!displayed.length && <article class="post card bg-white shadow-sm border-0"><div class="card-body">没有找到相关内容。</div></article>}
     <Pagination current={page} total={total} base={baseRoute} query={querySuffix} />
   </>}

@@ -3,8 +3,8 @@ import { siteOptions, stamp, stripTags } from '../lib/site';
 import type { Entry } from '../lib/types';
 import PostMeta from './PostMeta.astro';
 
-interface Props { entry: Entry; fullTalk?: boolean; commentCount?: number }
-const { entry, fullTalk = false, commentCount = 0 } = Astro.props;
+interface Props { entry: Entry; commentCount?: number; extraLikes?: number }
+const { entry, commentCount = 0, extraLikes = 0 } = Astro.props;
 const date = stamp(entry.published);
 const locked = entry.visibility === 'password';
 const title = locked ? '密码保护：' + entry.title : entry.title;
@@ -14,9 +14,8 @@ const option = siteOptions(Astro.locals.argonOverrides);
 const previewLayout = option('article_list_layout', '2');
 ---
 {entry.type === 'shuoshuo' ? (
-  <div class:list={[fullTalk ? 'shuoshuo-container' : 'shuoshuo-preview-container card bg-white shadow-sm border-0', 'shuoshuo-foldable']} id={'post-' + entry.id}>
-    {fullTalk && <div class="shuoshuo-meta shadow-sm"><time datetime={entry.published}>{date.year} 年 {date.month} 月 {date.day} 日 · {date.time}</time></div>}
-    <article class:list={[fullTalk ? 'card shuoshuo-main bg-white shadow-sm border-0' : 'shuoshuo-preview', { 'post-password-required': locked }]}>
+  <div class="shuoshuo-preview-container card bg-white shadow-sm border-0 shuoshuo-foldable" id={'post-' + entry.id}>
+    <article class:list={['shuoshuo-preview', { 'post-password-required': locked }]}>
       <a class="shuoshuo-title" href={entry.path}>{title}</a>
       {locked ? <div class="shuoshuo-content"><p>此内容受密码保护。</p><a href={entry.path}>输入密码查看</a></div>
         : <div class="shuoshuo-content" data-article set:html={entry.html} />}
@@ -25,6 +24,7 @@ const previewLayout = option('article_list_layout', '2');
       <span><i class="fa fa-calendar-o" aria-hidden="true"></i> <time datetime={entry.published}>
         <span class="shuoshuo-date-month">{date.month}</span> 月 <span class="shuoshuo-date-date">{date.day}</span> 日 , <span class="shuoshuo-date-year">{date.year}</span>
       </time><span class="post-meta-devide">|</span><i class="fa fa-clock-o" aria-hidden="true"></i> <span class="shuoshuo-date-time">{date.time}</span></span>
+      {!locked && (entry.likes ?? 0) + extraLikes > 0 && <span class="ml-2"><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> {(entry.likes ?? 0) + extraLikes}</span>}
       {commentCount > 0 && <a class="ml-2" href={entry.path + '#post_comment'}><i class="fa fa-comment-o" aria-hidden="true"></i> {commentCount}</a>}
     </div>
     <a class="shuoshuo-preview-link btn btn-outline-primary btn-icon-only rounded-circle" href={entry.path} aria-label={'阅读 ' + entry.title}>

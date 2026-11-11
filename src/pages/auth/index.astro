@@ -18,6 +18,7 @@ const next = returnPath(Astro.url.searchParams.get('return'), '/auth/');
       <h1 class="post-title">{owner ? '私密内容' : '站主登录'}</h1>
       {owner ? <>
         <p><a class="btn btn-primary" href="/auth/argon/" data-astro-reload>Argon 设置</a></p>
+        <p><a class="btn btn-outline-primary" href="/auth/comments/" data-astro-reload>留言审核</a></p>
         <ul class="astro-private-list">{restricted.map((entry) => <li><a href={entry.path}>{entry.title}</a> <span class="badge badge-secondary">{entry.visibility === 'password' ? '密码保护' : '私密'}</span></li>)}</ul>
         {!restricted.length && <p>暂无私密内容。</p>}
         <form action="/auth/action/" method="post" data-astro-reload><input type="hidden" name="intent" value="logout" /><button class="btn btn-outline-primary" type="submit">退出</button></form>

@@ -18,7 +18,7 @@ npm run dev
 - 在 `src/data/site.json` 设置站点域名、标题、语言、主题色、Banner、背景、分类和菜单。
 - 在 `src/content/posts/` 添加 Markdown 文章或页面。已有示例演示了 `title`、`date` 和 `path` 的写法。每篇文章的 `path` 应唯一。
 - `src/data/posts.json` 可保存已渲染的 HTML 条目，包括首页混排的说说。
-- `src/data/comments.json` 支持展示已导入的历史评论。
+- `src/data/comments.json` 支持展示已导入的历史评论。新评论提交后在 `/auth/comments/` 审核，评论和说说点赞保存在 `ARGON_STATE_DIR`。
 
 可选的站主登录位于 `/auth/`。用 `npm run admin:setup` 设置站主密码。若使用受限内容，另准备仓库外的运行目录并以 `npm run admin:setup -- --private-dir <路径>` 配置。受限目录中的 `entries.json` 使用 `{ "posts": [], "comments": [] }` 结构，文件放在 `uploads/`。条目的 `visibility` 可为 `private` 或 `password`，服务端会校验条目及其授权媒体。用于生产时，通过 HTTPS 访问。
 

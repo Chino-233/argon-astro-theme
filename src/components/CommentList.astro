@@ -1,7 +1,7 @@
 ---
 import { siteOptions, safeLink, stamp } from '../lib/site';
 import type { Comment } from '../lib/types';
-const { items, guestbook = false } = Astro.props as { items: Comment[]; guestbook?: boolean };
+const { items, guestbook = false, reply = false } = Astro.props as { items: Comment[]; guestbook?: boolean; reply?: boolean };
 const option = siteOptions(Astro.locals.argonOverrides);
 const index = new Map<number, Comment[]>();
 for (const item of items) {
@@ -20,27 +20,30 @@ function append(item: Comment, depth: number) {
 (index.get(0) ?? []).forEach((item) => append(item, 0));
 items.forEach((item) => append(item, 0));
 ---
-<section id="post_comment" class="card shadow-sm border-0">
-  <h2 class="post-comment-title">{guestbook ? '留言' : '评论'}{items.length > 0 ? ' · ' + items.length : ''}</h2>
+<section id="comments" class="comments-area card shadow-sm border-0">
+  <div class="card-body">
+  <h2 class="comments-title"><i class="fa fa-comments-o" aria-hidden="true"></i> {guestbook ? '留言板' : '评论'}{!guestbook && items.length > 0 ? ' · ' + items.length : ''}</h2>
   <ol class="comment-list astro-comment-list">
     {list.map(({ item, depth }) => {
       const date = stamp(item.date);
       return <li class="comment-item" id={'comment-' + item.id} style={'--comment-depth:' + Math.min(depth, 4)}>
-        <div class="comment-item-inner">
+        <div class="comment-item-left-wrapper">
           {option('sidebar_auther_image') && item.author === option('sidebar_auther_name')
             ? <img class="comment-item-avatar rounded-circle" src={option('sidebar_auther_image')} loading="lazy" alt="" />
-            : <span class="comment-item-avatar astro-comment-avatar rounded-circle" aria-hidden="true">{Array.from(item.author)[0] ?? '·'}</span>}
-          <div class="comment-item-main">
-            <div class="comment-item-meta">
-              <strong>{item.author_url ? <a href={safeLink(item.author_url)} rel="nofollow noopener noreferrer">{item.author}</a> : item.author}</strong>
+            : <span class="comment-item-avatar astro-comment-avatar rounded-circle" aria-hidden="true">{Array.from(item.author)[0] ?? '匿'}</span>}
+        </div>
+        <div class="comment-item-inner">
+            <div class="comment-item-title">
+              <strong>{item.author_url ? <a href={safeLink(item.author_url)} rel="nofollow noopener noreferrer">{item.author || '匿名'}</a> : item.author || '匿名'}</strong>
               <a class="comment-item-time" href={'#comment-' + item.id}>{date.year + '-' + date.month + '-' + date.day + ' ' + date.time}</a>
               {item.ownerOnly && <span class="badge badge-secondary">悄悄话</span>}
             </div>
             <div class="comment-item-text" data-article set:html={item.html} />
-          </div>
+            {reply && <button class="btn btn-link btn-sm astro-comment-reply" type="button" data-reply-id={item.id} data-reply-author={item.author || '匿名'}>回复</button>}
         </div>
       </li>;
     })}
   </ol>
-  {!items.length && <p class="astro-comment-empty">暂无评论。</p>}
+  {!items.length && <p class="astro-comment-empty">{guestbook ? '暂无留言。' : '暂无评论。'}</p>}
+  </div>
 </section>

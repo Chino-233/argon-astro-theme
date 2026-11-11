@@ -200,6 +200,20 @@ function openImage(img: HTMLImageElement) {
 document.addEventListener('click', (event) => {
   if (!(event.target instanceof Element)) return;
   const target = event.target;
+  const reply = target.closest<HTMLElement>('[data-reply-id]');
+  const cancelReply = target.closest('[data-comment-reply-cancel]');
+  if (reply || cancelReply) {
+    const parent = document.querySelector<HTMLInputElement>('[data-comment-parent]');
+    const info = document.querySelector<HTMLElement>('[data-comment-reply-info]');
+    const name = document.querySelector<HTMLElement>('[data-comment-reply-name]');
+    if (parent && info && name) {
+      parent.value = reply?.dataset.replyId ?? '0';
+      info.hidden = !reply;
+      name.textContent = reply?.dataset.replyAuthor ?? '';
+      if (reply) document.getElementById('post_comment_content')?.focus();
+    }
+    return;
+  }
   const opener = target.closest<HTMLElement>('[data-open-dialog]');
   if (opener) {
     event.preventDefault();

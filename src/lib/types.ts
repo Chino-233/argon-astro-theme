@@ -16,6 +16,7 @@ export interface Entry {
   views?: string | number | null;
   wordCount?: number;
   readingTime?: string;
+  likes?: number;
   visibility?: 'private' | 'password';
   passwordHash?: string | null;
   media?: string[];
@@ -23,7 +24,7 @@ export interface Entry {
 
 export interface Comment {
   id: number;
-  post_id: number;
+  post_id: Entry['id'];
   parent: number;
   author: string;
   author_url: string;
