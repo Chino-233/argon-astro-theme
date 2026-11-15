@@ -27,6 +27,11 @@
     "argon_enable_code_highlight": "true",
     "argon_math_render": "katex",
     "argon_show_headindex_number": "true",
+    "argon_comment_allow_editing": "true",
+    "argon_comment_allow_markdown": "true",
+    "argon_comment_emotion_keyboard": "true",
+    "argon_enable_comment_pinning": "true",
+    "argon_enable_comment_upvote": "true",
     "argon_enable_pangu": "article|shuoshuo|comment",
     "argon_show_customize_theme_color_picker": "true"
   },
@@ -63,6 +68,14 @@
         "url": "/about/",
         "target": "",
         "classes": []
+      },
+      {
+        "id": 5,
+        "parent": 0,
+        "title": "留言板",
+        "url": "/guestbook/",
+        "target": "",
+        "classes": []
       }
     ],
     "leftbar_menu": [
@@ -95,6 +108,14 @@
         "parent": 0,
         "title": "<i class=\"fa fa-info-circle\" aria-hidden=\"true\"></i> 关于",
         "url": "/about/",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 5,
+        "parent": 0,
+        "title": "留言板",
+        "url": "/guestbook/",
         "target": "",
         "classes": []
       }

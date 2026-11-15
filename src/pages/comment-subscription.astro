@@ -1,0 +1,49 @@
+---
+import { timingSafeEqual } from 'node:crypto';
+import { preventCaching } from '../lib/auth';
+import { loadInteractions, updateInteractions } from '../lib/interactions';
+
+preventCaching(Astro.response.headers);
+const method = Astro.request.method;
+const submitted = method === 'POST';
+if (submitted && (Astro.request.headers.get('Origin') !== Astro.url.origin ||
+    !Astro.request.headers.get('Content-Type')?.startsWith('application/x-www-form-urlencoded') ||
+    Number(Astro.request.headers.get('Content-Length') ?? 0) > 2048)) {
+  return new Response(null, { status: 403, headers: Astro.response.headers });
+}
+const body = submitted ? await Astro.request.text() : '';
+const params = submitted ? new URLSearchParams(body.length <= 2048 ? body : '') : Astro.url.searchParams;
+const id = Number(params.get('id'));
+const token = params.get('token') ?? '';
+const action = params.get('action');
+const confirm = action === 'confirm';
+const matching = (item: { id: number; mailToken?: string }) => item.id === id && item.mailToken &&
+  /^[\da-f]{64}$/.test(token) && timingSafeEqual(Buffer.from(item.mailToken, 'hex'), Buffer.from(token, 'hex'));
+const valid = (confirm || action === 'unsubscribe') && (submitted
+  ? await updateInteractions((state) => {
+    const item = state.comments.find(matching);
+    if (!item) return false;
+    item.mailVerified = confirm;
+    if (!confirm) {
+      delete item.mailToken;
+      delete item.email;
+    }
+    return true;
+  })
+  : (await loadInteractions()).comments.some(matching));
+if (!valid) Astro.response.status = 404;
+---
+<!doctype html>
+<html lang="zh-Hans">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width" /><meta name="referrer" content="no-referrer" /><title>留言回复订阅</title></head>
+  <body><main>
+    <h1>留言回复订阅</h1>
+    {!valid ? <p>链接已失效。</p> : submitted ? <p>{confirm ? '已确认订阅。' : '已取消订阅。'}</p> : <form action="/comment-subscription/" method="post">
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="token" value={token} />
+      <input type="hidden" name="action" value={action} />
+      <button type="submit">{confirm ? '确认订阅' : '取消订阅'}</button>
+    </form>}
+    <p><a href="/">返回首页</a></p>
+  </main></body>
+</html>

@@ -1,0 +1,16 @@
+---
+import { siteOptions } from '../lib/site';
+import type { Entry } from '../lib/types';
+const { entry } = Astro.props as { entry: Entry };
+const option = siteOptions(Astro.locals.argonOverrides);
+const threshold = Number(option('outdated_info_days', '-1'));
+const date = option('outdated_info_time_type', 'modifiedtime') === 'modifiedtime' ? entry.updated ?? entry.published : entry.published;
+const days = Math.floor((Date.now() - Date.parse(date)) / 86400_000);
+const show = threshold >= 0 && days >= threshold;
+const toast = option('outdated_info_tip_type', 'inpost') === 'toast';
+const message = option('outdated_info_tip_content', '本文最后更新于 %date_delta% 天前。').replaceAll('%date_delta%', String(days));
+---
+{show && <aside class:list={['alert alert-warning', { 'astro-outdated-toast': toast }]} role="note">
+  {message}
+  {toast && <button type="button" class="btn btn-sm btn-link" data-dismiss-outdated aria-label="关闭过时提示">×</button>}
+</aside>}

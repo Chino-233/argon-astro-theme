@@ -2,6 +2,7 @@
 import { stamp, stripTags } from '../lib/site';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 import type { Comment, Entry } from '../lib/types';
+import TalkBody from './TalkBody.astro';
 
 interface Props { entry: Entry; comments: Comment[]; extraLikes?: number; preview?: boolean; allowReply?: boolean; unlocked?: boolean; bodyComponent?: AstroComponentFactory }
 const { entry, comments, extraLikes = 0, preview = false, allowReply = false, unlocked = false, bodyComponent: Body } = Astro.props;
@@ -23,7 +24,7 @@ const returnTo = preview ? Astro.url.pathname + '#post-' + entry.id : entry.path
   <article id={'post-' + entry.id} class:list={['card shuoshuo-main bg-white shadow-sm border-0', { 'shuoshuo-foldable': preview }]}>
     <a class="shuoshuo-title" href={entry.path}>{locked ? '密码保护：' + entry.title : entry.title}</a>
     {locked ? <div class="shuoshuo-content"><p>此内容受密码保护。</p><a href={entry.path}>输入密码查看</a></div>
-      : <div class="shuoshuo-content" data-article>{Body ? <Body /> : <Fragment set:html={entry.html} />}</div>}
+      : <TalkBody html={entry.html} preview={preview} bodyComponent={Body} />}
     {preview && comments.length > 0 && !locked && <ul class="shuoshuo-comments pl-0 mb-0">
       {comments.slice(0, 3).map((comment) => <li>
         <a class="shuoshuo-comment-item-title" href={entry.path + '#comment-' + comment.id}>{comment.author || '匿名'}：</a>

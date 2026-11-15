@@ -2,23 +2,27 @@
 import { siteOptions, stamp, stripTags } from '../lib/site';
 import type { Entry } from '../lib/types';
 import PostMeta from './PostMeta.astro';
+import TalkBody from './TalkBody.astro';
+import { excerptLength, firstImage } from '../lib/argon-features';
 
 interface Props { entry: Entry; commentCount?: number; extraLikes?: number }
 const { entry, commentCount = 0, extraLikes = 0 } = Astro.props;
 const date = stamp(entry.published);
 const locked = entry.visibility === 'password';
 const title = locked ? '密码保护：' + entry.title : entry.title;
-const summary = stripTags(entry.excerpt || entry.html);
-const clipped = summary.length > 95 ? summary.slice(0, 95) + '…' : summary;
 const option = siteOptions(Astro.locals.argonOverrides);
+const summary = stripTags(entry.excerpt || entry.html);
+const cleanSummary = option('hide_shortcode_in_preview', 'true') === 'true' ? summary.replace(/\[\/?[\w-]+(?:\s+[^\]]*)?\]/g, '') : summary;
+const clipped = excerptLength(cleanSummary, Number(option('trim_words_count', '95')));
 const previewLayout = option('article_list_layout', '2');
+const cover = firstImage(entry, option);
 ---
 {entry.type === 'shuoshuo' ? (
   <div class="shuoshuo-preview-container card bg-white shadow-sm border-0 shuoshuo-foldable" id={'post-' + entry.id}>
     <article class:list={['shuoshuo-preview', { 'post-password-required': locked }]}>
       <a class="shuoshuo-title" href={entry.path}>{title}</a>
       {locked ? <div class="shuoshuo-content"><p>此内容受密码保护。</p><a href={entry.path}>输入密码查看</a></div>
-        : <div class="shuoshuo-content" data-article set:html={entry.html} />}
+        : <TalkBody html={entry.html} preview />}
     </article>
     <div class="shuoshuo-preview-meta">
       <span><i class="fa fa-calendar-o" aria-hidden="true"></i> <time datetime={entry.published}>
@@ -33,8 +37,8 @@ const previewLayout = option('article_list_layout', '2');
   </div>
 ) : (
   <article class:list={['post card bg-white shadow-sm border-0', 'post-preview-layout-' + previewLayout]} id={'post-' + entry.id}>
-    <header class:list={['post-header', { 'post-header-with-thumbnail': Boolean(entry.featuredImage) }]}>
-      {entry.featuredImage && <a class="post-thumbnail" aria-label={entry.title} href={entry.path} style={'background-image:url("' + entry.featuredImage + '")'} />}
+    <header class:list={['post-header', { 'post-header-with-thumbnail': Boolean(cover) }]}>
+      {cover && <a class="post-thumbnail" aria-label={entry.title} href={entry.path} style={'background-image:url(' + JSON.stringify(cover) + ')'} />}
     </header>
     <div class="post-content-container">
       <a class="post-title" href={entry.path}>{title}</a>

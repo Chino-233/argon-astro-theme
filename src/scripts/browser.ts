@@ -1,5 +1,4 @@
-import renderMathInElement from 'katex/contrib/auto-render';
-import 'katex/dist/katex.min.css';
+import { renderMath } from './math';
 import { colorPalette } from '../lib/color';
 
 type Preferences = Partial<Record<'mode' | 'font' | 'shadow' | 'filter' | 'radius' | 'color', string>>;
@@ -12,6 +11,7 @@ let highlightLoading: Promise<void> | undefined;
 let previousScroll = 0;
 let catalog: Array<{ link: HTMLAnchorElement; heading: HTMLElement }> = [];
 let currentHeading: HTMLAnchorElement | undefined;
+let imageObserver: IntersectionObserver | undefined;
 
 function preferences(): Preferences {
   try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; }
@@ -143,33 +143,88 @@ function spaceChinese(element: HTMLElement) {
 }
 
 function setMedia(element: HTMLElement) {
+  const prefs = document.documentElement.dataset;
   element.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
+    if (img.dataset.argonImage) return;
+    img.dataset.argonImage = 'true';
     const original = img.dataset.original ?? img.dataset.src ?? img.dataset.lazySrc;
-    if (original && !img.getAttribute('src')?.startsWith('/wp-content/uploads/')) img.src = original;
-    img.loading = document.documentElement.dataset.lazyload === 'true' ? 'lazy' : 'eager';
-    const { zoom, fancybox } = document.documentElement.dataset;
-    if ((zoom === 'true' || fancybox === 'true') && !img.closest('a,button')) {
+    if (original && !img.getAttribute('src')?.startsWith('/wp-content/uploads/')) img.dataset.argonSource = original;
+    if (prefs.lazyload === 'true') {
+      img.loading = 'lazy';
+      if (!img.complete || img.dataset.argonSource) {
+        img.dataset.argonLazy = prefs.lazyStyle ?? 'none';
+        const finished = () => { delete img.dataset.argonLazy; };
+        img.addEventListener('load', () => {
+          finished();
+          if (!reducedMotion.matches && prefs.lazyEffect !== 'none') {
+            img.animate(prefs.lazyEffect === 'slideDown' ? [{ opacity: 0, transform: 'translateY(-10px)' }, { opacity: 1 }] : [{ opacity: 0 }, { opacity: 1 }], 220);
+          }
+        }, { once: true });
+        img.addEventListener('error', finished, { once: true });
+        imageObserver?.observe(img);
+      }
+    } else {
+      if (img.dataset.argonSource) img.src = img.dataset.argonSource;
+      img.loading = 'eager';
+    }
+    const { zoom, fancybox } = prefs;
+    const linked = img.closest<HTMLAnchorElement>('a[href]');
+    const imageLink = linked && /^https?:$/.test(linked.protocol) && /\.(?:avif|gif|jpe?g|png|webp)$/i.test(linked.pathname);
+    if ((zoom === 'true' || fancybox === 'true') && !img.closest('button') && (!linked || imageLink)) {
+      if (imageLink) img.dataset.previewSource = linked.href;
       img.classList.add('astro-zoom');
       img.tabIndex = 0;
     }
   });
 }
 
+function numberCode(block: HTMLElement) {
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  const range = new Range();
+  range.setStart(block, 0);
+  const lines: HTMLSpanElement[] = [];
+  function appendLine() {
+    const line = document.createElement('span');
+    line.className = 'astro-code-line';
+    line.append(range.cloneContents());
+    lines.push(line);
+  }
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = node.textContent ?? '';
+    for (let index = text.indexOf('\n'); index >= 0; index = text.indexOf('\n', index + 1)) {
+      range.setEnd(node, index);
+      appendLine();
+      range.setStart(node, index + 1);
+    }
+  }
+  range.setEnd(block, block.childNodes.length);
+  if ((!range.collapsed && range.toString()) || !lines.length) appendLine();
+  const numbered = lines.flatMap((line, index) => index ? [document.createTextNode('\n'), line] : [line]);
+  block.replaceChildren(...numbered);
+  block.classList.add('astro-code-numbered');
+}
+
 async function highlight() {
-  const blocks = [...document.querySelectorAll<HTMLElement>('[data-article] pre code:not(.hljs)')];
+  const root = document.documentElement;
+  const blocks = [...document.querySelectorAll<HTMLElement>('[data-article] pre code:not([data-argon-highlighted])')];
   if (!blocks.length || document.documentElement.dataset.highlight !== 'true') return;
   type Highlighter = { highlightBlock(element: HTMLElement): void };
   const host = window as typeof window & { hljs?: Highlighter };
   if (!host.hljs) {
     highlightLoading ??= new Promise<void>((resolve) => {
       const script = document.createElement('script');
-      script.src = '/assets/argon/highlight.js';
+      script.src = root.dataset.highlightSrc ?? '/assets/argon/highlight.js';
       script.onload = script.onerror = () => resolve();
       document.head.append(script);
     });
     await highlightLoading;
   }
-  blocks.filter((block) => block.isConnected).forEach((block) => host.hljs?.highlightBlock(block));
+  for (const block of blocks) {
+    if (!block.isConnected || block.dataset.argonHighlighted) continue;
+    block.dataset.argonHighlighted = 'true';
+    host.hljs?.highlightBlock(block);
+    if (root.dataset.showCodeLines === 'true') numberCode(block);
+  }
 }
 
 function initPage() {
@@ -183,24 +238,88 @@ function initPage() {
   updateClocks();
   try { bannerTyping(); } catch { /* Storage can be disabled. */ }
   const root = document.documentElement;
-  document.querySelectorAll<HTMLElement>('[data-article]').forEach((element) => {
+  imageObserver?.disconnect();
+  imageObserver = new IntersectionObserver((entries, observer) => {
+    for (const entry of entries) if (entry.isIntersecting && entry.target instanceof HTMLImageElement) {
+      const img = entry.target;
+      if (img.dataset.argonSource) img.src = img.dataset.argonSource;
+      img.loading = 'eager';
+      observer.unobserve(img);
+    }
+  }, { rootMargin: (Number(root.dataset.lazyThreshold) || 0) + 'px' });
+  const content = [...document.querySelectorAll<HTMLElement>('[data-article]')];
+  content.forEach((element) => {
     setMedia(element);
     const pangu = root.dataset.pangu?.split('|') ?? [];
     const kind = element.classList.contains('comment-item-text') ? 'comment'
       : element.classList.contains('shuoshuo-content') ? 'shuoshuo' : 'article';
     if (pangu.includes(kind)) spaceChinese(element);
-    if (root.dataset.katex === 'true' && !element.dataset.mathRendered) {
-      renderMathInElement(element, { delimiters: [
-        { left: '$$', right: '$$', display: true },
-        { left: '$', right: '$', display: false },
-        { left: '\\(', right: '\\)', display: false },
-        { left: '\\[', right: '\\]', display: true },
-      ], throwOnError: false });
-      element.dataset.mathRendered = 'true';
-    }
   });
+  void renderMath(content);
+  document.querySelectorAll<HTMLElement>('#post_content .reference-list-container > h3, #post_content [data-footnotes] > #footnote-label').forEach((heading) => {
+    heading.textContent = root.dataset.referenceTitle ?? '参考';
+    heading.classList.remove('sr-only');
+  });
+  if (root.dataset.localTime === 'true') {
+    document.querySelectorAll<HTMLTimeElement>('.post-meta time[datetime], .comment-item-time time[datetime]').forEach((time) => {
+      const date = new Date(time.dateTime);
+      if (Number.isFinite(date.getTime())) time.textContent = new Intl.DateTimeFormat(document.documentElement.lang, { dateStyle: 'short', timeStyle: 'short' }).format(date);
+    });
+  }
   void highlight();
+  const comments = document.querySelector<HTMLElement>('[data-comment-pagination]');
+  if (comments) showCommentPage(comments);
 }
+
+function showCommentPage(section: HTMLElement, requested?: number) {
+  const perPage = Number(section.dataset.commentPageSize);
+  const rows = [...section.querySelectorAll<HTMLElement>('[data-comment-row]')];
+  const navigation = section.querySelector<HTMLElement>('[data-comment-pages]');
+  if (!perPage || !navigation) return;
+  const count = Math.ceil(rows.length / perPage);
+  const target = rows.findIndex((row) => '#' + row.id === location.hash);
+  const page = Math.max(1, Math.min(count, requested ?? Math.floor(target / perPage) + 1));
+  const feed = section.dataset.commentPagination === 'feed';
+  rows.forEach((row, index) => { row.hidden = index >= page * perPage || (!feed && index < (page - 1) * perPage); });
+  const button = (label: string, destination: number) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'btn btn-sm btn-outline-primary mr-1';
+    item.textContent = label;
+    item.dataset.commentPageTarget = String(destination);
+    if (!feed && destination === page) item.setAttribute('aria-current', 'page');
+    return item;
+  };
+  navigation.replaceChildren(...(feed
+    ? page < count ? [button('加载更多留言', page + 1)] : []
+    : Array.from({ length: count }, (_, index) => button(String(index + 1), index + 1))));
+}
+
+window.addEventListener('hashchange', () => {
+  const comments = document.querySelector<HTMLElement>('[data-comment-pagination]');
+  if (comments && location.hash.startsWith('#comment-')) {
+    showCommentPage(comments);
+    document.getElementById(location.hash.slice(1))?.scrollIntoView();
+  }
+});
+
+document.addEventListener('focusin', (event) => {
+  if (!(event.target instanceof Element)) return;
+  const form = event.target.closest<HTMLFormElement>('#post_comment form');
+  const challenge = form?.querySelector<HTMLElement>('[data-captcha-entry]');
+  const label = challenge?.querySelector('[data-captcha-label]');
+  const token = challenge?.querySelector<HTMLInputElement>('[name="captcha_token"]');
+  if (!challenge || !token || !label || challenge.dataset.fetched) return;
+  challenge.dataset.fetched = 'true';
+  fetch('/comment-captcha/?entry=' + encodeURIComponent(challenge.dataset.captchaEntry ?? ''))
+    .then((response) => response.ok ? response.json() : undefined)
+    .then((data) => {
+      // Keep the original challenge if the visitor already started answering it.
+      if (!data || form?.querySelector<HTMLInputElement>('[name="captcha"]')?.value) return;
+      label.textContent = data.label;
+      token.value = data.token;
+    }).catch(() => {});
+});
 
 function drawer(open: boolean) {
   document.documentElement.classList.toggle('leftbar-opened', open);
@@ -211,14 +330,40 @@ function openImage(img: HTMLImageElement) {
   const dialog = document.querySelector<HTMLDialogElement>('#argon_image_preview');
   const target = dialog?.querySelector('img');
   if (!dialog || !target) return;
-  target.src = img.currentSrc || img.src;
+  target.src = img.dataset.previewSource || img.currentSrc || img.src;
   target.alt = img.alt;
+  const { zoom, zoomScale, zoomDuration, zoomEasing } = document.documentElement.dataset;
+  dialog.style.setProperty('--astro-zoom-scale', zoom === 'true' ? zoomScale ?? '.9' : '.98');
   dialog.showModal();
+  if (!reducedMotion.matches && zoom === 'true') {
+    const frames = [{ transform: 'scale(.7)', opacity: .4 }, { transform: 'scale(1)', opacity: 1 }];
+    try { target.animate(frames, { duration: Number(zoomDuration) || 0, easing: zoomEasing }); } catch { target.animate(frames, 200); }
+  }
 }
 
 document.addEventListener('click', (event) => {
   if (!(event.target instanceof Element)) return;
   const target = event.target;
+  const dismiss = target.closest('[data-dismiss-outdated]');
+  if (dismiss) { dismiss.closest('.astro-outdated-toast')?.remove(); return; }
+  const insertion = target.closest<HTMLButtonElement>('[data-comment-insert]');
+  if (insertion) {
+    const box = insertion.form?.querySelector<HTMLTextAreaElement>('[name="comment"]');
+    const value = insertion.dataset.commentInsert ?? '';
+    if (box && box.value.length - (box.selectionEnd - box.selectionStart) + value.length <= box.maxLength) {
+      box.setRangeText(value, box.selectionStart, box.selectionEnd, 'end');
+      box.focus();
+    }
+    return;
+  }
+  const pagination = target.closest<HTMLElement>('[data-comment-page-target]');
+  const comments = pagination?.closest<HTMLElement>('[data-comment-pagination]');
+  if (comments && pagination) {
+    showCommentPage(comments, Number(pagination.dataset.commentPageTarget));
+    comments.querySelector<HTMLButtonElement>('[data-comment-page-target][aria-current], [data-comment-page-target]')?.focus();
+    if (comments.dataset.commentPagination === 'page') comments.scrollIntoView();
+    return;
+  }
   const reply = target.closest<HTMLElement>('[data-reply-id]');
   const cancelReply = target.closest('[data-comment-reply-cancel]');
   if (reply || cancelReply) {
@@ -263,7 +408,10 @@ document.addEventListener('click', (event) => {
   if (target.closest('[data-back-top]')) window.scrollTo({ top: 0, behavior });
   if (target.closest('[data-scroll-content]')) document.getElementById('content')?.scrollIntoView({ behavior });
   if (target.closest('[data-toggle-dark]')) savePreference('mode', document.documentElement.classList.contains('darkmode') ? 'light' : 'dark');
-  if (target instanceof HTMLImageElement && target.classList.contains('astro-zoom')) openImage(target);
+  if (target instanceof HTMLImageElement && target.classList.contains('astro-zoom')) {
+    event.preventDefault();
+    openImage(target);
+  }
   const copy = target.closest<HTMLButtonElement>('[data-copy-link]');
   if (copy) {
     void navigator.clipboard.writeText(location.href.split('#')[0]).then(() => {

@@ -38,6 +38,10 @@ export interface Comment {
   html: string;
   ownerOnly?: boolean;
   media?: string[];
+  avatar?: string;
+  likes?: number;
+  pinned?: boolean;
+  device?: { browser?: string; version?: string; platform?: string };
 }
 
 export interface MenuItem {

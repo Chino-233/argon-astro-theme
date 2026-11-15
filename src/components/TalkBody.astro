@@ -1,0 +1,11 @@
+---
+import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
+import { siteOptions, stripTags } from '../lib/site';
+const { html, preview = false, bodyComponent: Body } = Astro.props as { html: string; preview?: boolean; bodyComponent?: AstroComponentFactory };
+const text = preview ? stripTags(html) : '';
+const fold = preview && siteOptions(Astro.locals.argonOverrides)('fold_long_shuoshuo') === 'true' && text.length > 180;
+---
+{fold ? <details class="shuoshuo-content astro-folded-talk">
+  <summary>{text.slice(0, 115)}… 展开</summary>
+  <div data-article set:html={html} />
+</details> : <div class="shuoshuo-content" data-article>{Body ? <Body /> : <Fragment set:html={html} />}</div>}

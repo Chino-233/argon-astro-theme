@@ -2,6 +2,7 @@
 import { isOwner, preventCaching } from '../../../lib/auth';
 import { metadataChoices, optionGroups } from '../../../lib/argon-options';
 import { customCss, siteOptions } from '../../../lib/site';
+import { commentMailConfigured } from '../../../lib/comment-mail';
 
 preventCaching(Astro.response.headers);
 if (!isOwner(Astro.cookies)) {
@@ -54,6 +55,7 @@ const error = Astro.url.searchParams.get('error')?.slice(0, 200);
         <input type="hidden" name="action" value="save" />
         {optionGroups.map((group, index) => <section class="admin-section" id={'group-' + index}>
           <h2>{group.title}</h2>
+          {group.title === '评论与留言' && !commentMailConfigured() && <p class="text-muted">邮件回复通知需要在服务器上配置 SMTP。设置可以提前保存。</p>}
           <div class="fields">
             {group.fields.map((field) => {
               const name = 'argon_' + field.key;

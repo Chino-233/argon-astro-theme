@@ -1,8 +1,18 @@
 ---
-import { siteOptions, safeLink, stamp } from '../lib/site';
-import type { Comment } from '../lib/types';
-const { items, guestbook = false, reply = false } = Astro.props as { items: Comment[]; guestbook?: boolean; reply?: boolean };
+import { siteOptions, safeLink, stamp, stripTags } from '../lib/site';
+import { commentPins, ownsComment, type Interactions } from '../lib/interactions';
+import type { Comment, Entry } from '../lib/types';
+interface Props { items: Comment[]; entry: Entry; guestbook?: boolean; reply?: boolean; interactions: Interactions; visitor?: string; owner?: boolean }
+const { items, entry, guestbook = false, reply = false, interactions, visitor, owner = false } = Astro.props;
 const option = siteOptions(Astro.locals.argonOverrides);
+const enabled = (key: string) => option(key) === 'true';
+const pins = enabled('enable_comment_pinning') ? commentPins(interactions, entry.id, items) : [];
+const stored = new Map(interactions.comments.map((item) => [item.id, item]));
+const parents = new Map(items.map((item) => [item.id, item]));
+const historyAudience = option('who_can_visit_comment_edit_history', 'admin');
+const deviceFields = option('comment_ua', 'hidden').split(',') as Array<keyof NonNullable<Comment['device']>>;
+const avatarBase = option('gravatar_cdn', 'https://www.gravatar.com/avatar/').replace(/\/?$/, '/');
+const pageSize = 10;
 const index = new Map<number, Comment[]>();
 for (const item of items) {
   const siblings = index.get(item.parent) ?? [];
@@ -17,33 +27,79 @@ function append(item: Comment, depth: number) {
   list.push({ item, depth });
   (index.get(item.id) ?? []).forEach((child) => append(child, depth + 1));
 }
+for (const id of pins) {
+  const item = parents.get(id);
+  if (item) append(item, 0);
+}
 (index.get(0) ?? []).forEach((item) => append(item, 0));
 items.forEach((item) => append(item, 0));
 ---
-<section id="comments" class="comments-area card shadow-sm border-0">
+<section id="comments" class:list={['comments-area card shadow-sm border-0', { 'comment-avatar-vertical-center': enabled('comment_avatar_vcenter') }]}
+  data-comment-pagination={list.length > pageSize ? option('comment_pagination_type', 'feed') : undefined} data-comment-page-size={pageSize}>
   <div class="card-body">
   <h2 class="comments-title"><i class="fa fa-comments-o" aria-hidden="true"></i> {guestbook ? '留言板' : '评论'}{!guestbook && items.length > 0 ? ' · ' + items.length : ''}</h2>
   <ol class="comment-list astro-comment-list">
     {list.map(({ item, depth }) => {
       const date = stamp(item.date);
-      return <li class="comment-item" id={'comment-' + item.id} style={'--comment-depth:' + Math.min(depth, 4)}>
+      const record = stored.get(item.id);
+      const pending = record?.status === 'pending';
+      const isMine = ownsComment(record, visitor);
+      const history = owner || historyAudience === 'everyone' || (historyAudience === 'commentsender' && isMine) ? record?.history : undefined;
+      const reactions = interactions.commentVotes?.[item.id] ?? [];
+      const parent = parents.get(item.parent);
+      const mayInteract = reply && !item.ownerOnly && !pending;
+      const accountAvatar = !enabled('text_gravatar') && item.avatar
+        ? item.avatar.startsWith('qq:') ? (enabled('comment_enable_qq_avatar') ? 'https://q1.qlogo.cn/g?b=qq&nk=' + item.avatar.slice(3) + '&s=100' : '')
+          : avatarBase + item.avatar + '?d=identicon&s=80' : '';
+      const device = deviceFields.map((field) => item.device?.[field]).filter(Boolean).join(' ');
+      return <li class="comment-item" id={'comment-' + item.id} data-comment-row style={'--comment-depth:' + Math.min(depth, 4)}>
         <div class="comment-item-left-wrapper">
           {option('sidebar_auther_image') && item.author === option('sidebar_auther_name')
             ? <img class="comment-item-avatar rounded-circle" src={option('sidebar_auther_image')} loading="lazy" alt="" />
+            : accountAvatar ? <img class="comment-item-avatar rounded-circle" src={accountAvatar} loading="lazy" referrerpolicy="no-referrer" alt="" />
             : <span class="comment-item-avatar astro-comment-avatar rounded-circle" aria-hidden="true">{Array.from(item.author)[0] ?? '匿'}</span>}
         </div>
         <div class="comment-item-inner">
             <div class="comment-item-title">
               <strong>{item.author_url ? <a href={safeLink(item.author_url)} rel="nofollow noopener noreferrer">{item.author || '匿名'}</a> : item.author || '匿名'}</strong>
-              <a class="comment-item-time" href={'#comment-' + item.id}>{date.year + '-' + date.month + '-' + date.day + ' ' + date.time}</a>
+              <a class="comment-item-time" href={'#comment-' + item.id}><time datetime={item.date}>{date.year + '-' + date.month + '-' + date.day + ' ' + date.time}</time></a>
               {item.ownerOnly && <span class="badge badge-secondary">悄悄话</span>}
+              {pins.includes(item.id) && <span class="badge badge-primary">置顶</span>}
+              {(pending || (record?.revision && (isMine || owner))) && <span class="badge badge-warning">待审核</span>}
+              {device && <span class="comment-item-time">{device}</span>}
             </div>
-            <div class="comment-item-text" data-article set:html={item.html} />
-            {reply && <button class="btn btn-link btn-sm astro-comment-reply" type="button" data-reply-id={item.id} data-reply-author={item.author || '匿名'}>回复</button>}
+            {parent && enabled('show_comment_parent_info') && <a class="comment-item-time ml-0" href={'#comment-' + parent.id}>回复 {parent.author || '匿名'}</a>}
+            {enabled('fold_long_comments') && stripTags(item.html).length > 250 ? <details>
+              <summary>{stripTags(item.html).slice(0, 120)}… 展开</summary>
+              <div class="comment-item-text" data-article set:html={item.html} />
+            </details> : <div class="comment-item-text" data-article set:html={item.html} />}
+            <div class="astro-comment-actions">
+              {mayInteract && <button class="btn btn-link btn-sm astro-comment-reply" type="button" data-reply-id={item.id} data-reply-author={item.author || '匿名'}>回复</button>}
+              {mayInteract && (enabled('enable_comment_upvote') || (owner && enabled('enable_comment_pinning'))) && <form action="/interactions/" method="post" data-astro-reload>
+                <input type="hidden" name="entry" value={entry.id} /><input type="hidden" name="comment_id" value={item.id} />
+                {enabled('enable_comment_upvote') && <button class="btn btn-link btn-sm" type="submit" name="action" value="comment-like" disabled={Boolean(visitor && reactions.includes(visitor))}>点赞 {(item.likes ?? 0) + reactions.length}</button>}
+                {owner && enabled('enable_comment_pinning') && <button class="btn btn-link btn-sm" type="submit" name="action" value="pin">{pins.includes(item.id) ? '取消置顶' : '置顶'}</button>}
+              </form>}
+            </div>
+            {reply && isMine && enabled('comment_allow_editing') && <details>
+              <summary>编辑留言</summary>
+              <form action="/interactions/" method="post" data-astro-reload>
+                <input type="hidden" name="action" value="comment-edit" />
+                <input type="hidden" name="entry" value={entry.id} />
+                <input type="hidden" name="comment_id" value={item.id} />
+                <textarea class="form-control" name="comment" aria-label="留言内容" maxlength="4000" required>{record?.revision?.source ?? record?.source}</textarea>
+                <button class="btn btn-sm btn-primary mt-2" type="submit">提交修改</button>
+              </form>
+            </details>}
+            {history?.length && <details>
+              <summary>编辑历史</summary>
+              {history.map((version) => <div class="comment-item-text"><time datetime={version.date}>{version.date.slice(0, 10)}</time><div set:html={version.html} /></div>)}
+            </details>}
         </div>
       </li>;
     })}
   </ol>
+  {list.length > pageSize && <nav data-comment-pages class="mt-2" aria-label="留言分页" />}
   {!items.length && <p class="astro-comment-empty">{guestbook ? '暂无留言。' : '暂无评论。'}</p>}
   </div>
 </section>

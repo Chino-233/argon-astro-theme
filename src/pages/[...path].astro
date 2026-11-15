@@ -9,9 +9,12 @@ import TalkCard from '../components/TalkCard.astro';
 import Pagination from '../components/Pagination.astro';
 import Timeline from '../components/Timeline.astro';
 import ShareLinks from '../components/ShareLinks.astro';
+import OutdatedNotice from '../components/OutdatedNotice.astro';
+import { customHtml } from '../lib/argon-options';
+import { firstImage, relatedArticles } from '../lib/argon-features';
 import { canRead, isOwner, preventCaching } from '../lib/auth';
 import { findRestricted, restrictedData } from '../lib/private-store';
-import { allowsComments, loadInteractions, publicComments } from '../lib/interactions';
+import { allowsComments, commentVisitor, loadInteractions, ownsComment, publicComments } from '../lib/interactions';
 import { canonicalPath, comments, getEntries, headings, ordered, site, siteOptions, stamp, stripTags, terms } from '../lib/site';
 import type { Entry } from '../lib/types';
 
@@ -54,6 +57,7 @@ const publicPreviews = ordered([...entries, ...restricted.posts.filter((item) =>
   excerpt: '', html: '', visibility: 'password' as const,
 }))]);
 const articles = publicPreviews.filter((item) => item.type === 'post');
+const hiddenCategories = new Set(option('hide_categories').split(',').filter(Boolean).map(Number));
 const talks = publicPreviews.filter((item) => item.type === 'shuoshuo');
 const talkPage = entry?.template === 'shuoshuo.php' || (!entry && route === '/shuoshuo/');
 const timeline = entry?.template === 'timeline.php' || (!entry && route === '/archive/');
@@ -69,7 +73,8 @@ const matching = list ? (
       return date.year === archive[1] && (!archive[2] || date.month.padStart(2, '0') === archive[2]) &&
         (!archive[3] || date.day.padStart(2, '0') === archive[3]);
     })
-  : publicPreviews.filter((item) => item.type === 'post' || (item.type === 'shuoshuo' && option('home_show_shuoshuo', 'true') === 'true'))
+  : publicPreviews.filter((item) => (item.type === 'post' && !item.categories?.some((id) => hiddenCategories.has(id))) ||
+    (item.type === 'shuoshuo' && option('home_show_shuoshuo', 'true') === 'true'))
 ) : [];
 const total = Math.max(1, Math.ceil(matching.length / pageSize));
 const found = !missingPrivate && Boolean(entry || talkPage || timeline || (list && page >= 1 && page <= total));
@@ -87,25 +92,28 @@ const article = entry && !passwordPage && !rendered
   ? headings(entry.html, 'post-' + entry.id)
   : { html: '', links: rendered?.headings.map(({ slug, text, depth }) => ({ id: slug, label: text, depth })) ?? [] };
 const interactions = await loadInteractions();
+const visitor = commentVisitor(Astro.cookies);
+if (entry && allowsComments(entry)) {
+  if (visitor) preventCaching(Astro.response.headers);
+  else Astro.response.headers.set('Vary', 'Cookie');
+}
 const allComments = [...comments, ...publicComments(interactions)];
 const commentsFor = (id: Entry['id']) => allComments.filter((item) => item.post_id === id);
 const visibleComments = entry && !passwordPage ? [
   ...commentsFor(entry.id),
+  ...interactions.comments.filter((item) => item.post_id === entry.id && (item.ownerOnly || item.status === 'pending') &&
+    (owner || ownsComment(item, visitor))),
   ...restricted.comments.filter((item) => item.post_id === entry.id && (!item.ownerOnly || owner)),
 ] : [];
 const canComment = Boolean(entry && !passwordPage && allowsComments(entry));
 const likesFor = (id: Entry['id']) => interactions.likes[String(id)] ?? 0;
 const isArticle = entry?.type === 'post';
-const relatedMode = option('related_post', 'disabled');
-const related = isArticle && relatedMode !== 'disabled' ? articles.filter((item) => item.id !== entry?.id && !item.visibility && (
-  (relatedMode.includes('category') && item.categories?.some((id) => entry?.categories?.includes(id))) ||
-  (relatedMode.includes('tag') && item.tags?.some((id) => entry?.tags?.includes(id)))
-)) : [];
-if (option('related_post_sort_order', 'DESC') === 'ASC') related.reverse();
-related.splice(Number(option('related_post_limit', '10')));
+const related = entry ? relatedArticles(entry, articles, option) : [];
 const shareMode = option('show_sharebtn', 'domestic');
+const donate = option('donate_qrcode_url');
+const afterPost = isArticle ? customHtml('custom_html_foot', option('additional_content_after_post')) : '';
 const querySuffix = searchPage ? '?s=' + encodeURIComponent(query) + '&post_type=' + types.join(',') : '';
-const bannerImage = entry && !passwordPage && option('show_thumbnail_in_banner_in_content_page') === 'true' ? entry.featuredImage : undefined;
+const bannerImage = entry && !passwordPage && option('show_thumbnail_in_banner_in_content_page') === 'true' ? firstImage(entry, option) : undefined;
 ---
 <Layout title={title} entries={entries} owner={owner} restricted={Boolean(privateEntry) || !found}
   home={home && found} list={list && found} progress={Boolean(entry && entry.type !== 'shuoshuo' && !passwordPage && !talkPage && !timeline && !guestbook)}
@@ -143,17 +151,20 @@ const bannerImage = entry && !passwordPage && option('show_thumbnail_in_banner_i
     {entry.type === 'shuoshuo' ? <TalkCard entry={{ ...entry, html: article.html || entry.html }} bodyComponent={Content} comments={visibleComments} extraLikes={likesFor(entry.id)} unlocked={allowed} /> : !guestbook && <article class="post post-full card bg-white shadow-sm border-0" id={'post-' + entry.id}>
       <EntryHeader entry={entry} commentCount={visibleComments.length} bannerCover={Boolean(bannerImage)} />
       <div class="post-content" id="post_content" data-article>
+        {isArticle && <OutdatedNotice entry={entry} />}
         {Content ? <Content /> : <Fragment set:html={article.html} />}
+        {afterPost && <div class="astro-after-post" set:html={afterPost} />}
       </div>
       {isArticle && <div class="astro-article-footer">
         {(entry.tags?.length ?? 0) > 0 && terms.post_tag.filter((term) => entry.tags?.includes(term.id)).map((term) => <a class="badge badge-primary mr-2" href={term.url}>#{term.name}</a>)}
         {!entry.visibility && shareMode !== 'false' && <ShareLinks entry={entry} mode={shareMode} />}
+        {donate && <details class="astro-share ml-2"><summary class="btn btn-sm btn-outline-primary">打赏</summary><img class="astro-qr" src={donate} alt="打赏二维码" loading="lazy" /></details>}
       </div>}
     </article>}
     {related.length > 0 && <div class="card bg-white shadow-sm border-0 astro-related">
       <div class="card-body"><h5>相关文章</h5>{related.map((item) => <a href={item.path}>{item.title}</a>)}</div>
     </div>}
-    {(guestbook || isArticle || entry.type === 'shuoshuo' || visibleComments.length > 0) && <CommentList items={visibleComments} guestbook={guestbook} reply={canComment} />}
+    {(guestbook || isArticle || entry.type === 'shuoshuo' || visibleComments.length > 0) && <CommentList items={visibleComments} entry={entry} guestbook={guestbook} reply={canComment} interactions={interactions} visitor={visitor} owner={owner} />}
     {canComment && <CommentForm entry={entry} guestbook={guestbook} />}
   </> : <>
     <div class="astro-list-cards" data-columns={option('article_list_waterflow', '1')}>

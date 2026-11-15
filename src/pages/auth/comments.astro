@@ -9,7 +9,7 @@ if (!isOwner(Astro.cookies)) {
   return new Response(null, { status: 303, headers: Astro.response.headers });
 }
 const [entries, interactions] = await Promise.all([getEntries(), loadInteractions()]);
-const pending = interactions.comments.filter((item) => item.status === 'pending');
+const pending = interactions.comments.filter((item) => item.status === 'pending' || item.revision);
 ---
 <!doctype html>
 <html lang="zh-Hans">
@@ -36,7 +36,10 @@ const pending = interactions.comments.filter((item) => item.status === 'pending'
         return <article class="card"><div class="card-body">
           <h2 class="h5">{item.author}</h2>
           {entry && <p><a href={entry.path}>{entry.title}</a></p>}
-          <div class="message" set:html={item.html} />
+          {item.ownerOnly && <span class="badge badge-secondary">悄悄话</span>}
+          {item.revision && <span class="badge badge-secondary">编辑申请</span>}
+          <div class="message" set:html={item.revision?.html ?? item.html} />
+          {item.revision && <details><summary>当前版本</summary><div class="message" set:html={item.html} /></details>}
           <form action="/interactions/" method="post">
             <input type="hidden" name="comment_id" value={item.id} />
             <button class="btn btn-primary btn-sm" name="action" value="approve" type="submit">通过</button>

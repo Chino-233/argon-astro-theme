@@ -7,6 +7,8 @@ import ThemeControls from '../components/ThemeControls.astro';
 import { customCss, siteOptions, site } from '../lib/site';
 import { colorPalette } from '../lib/color';
 import { customHtml } from '../lib/argon-options';
+import { argonAssets, bannerBackground } from '../lib/argon-features';
+import codeThemes from '../lib/code-themes.json';
 import type { Entry, Heading } from '../lib/types';
 import '../styles/argon-port.css';
 
@@ -25,6 +27,8 @@ interface Props {
 }
 const { title, description, entries, headings, list = false, home = false, owner = false, restricted = false, progress = false, commentTarget, bannerImage } = Astro.props;
 const option = siteOptions(Astro.locals.argonOverrides);
+const onlyIfOn = (key: string) => option(key) === 'true';
+const assets = argonAssets(option);
 const pageTitle = title ? title + ' – ' + site.title : site.title + ' – ' + site.description;
 const canonical = new URL(Astro.url.pathname, site.url).href;
 const layout = option('page_layout', 'double');
@@ -37,7 +41,7 @@ const imageVar = (value: string) => value ? 'url(' + JSON.stringify(value) + ')'
 const css = {
   ...colorPalette(color),
   '--card-radius': Number(option('card_radius', '4')) + 'px',
-  '--argon-banner-image': imageVar(bannerImage ?? option('banner_background_url')),
+  '--argon-banner-image': imageVar(bannerImage ?? await bannerBackground(option('banner_background_url'))),
   '--argon-background': imageVar(option('page_background_url')),
   '--argon-background-dark': imageVar(darkImage),
   '--argon-background-opacity': option('page_background_opacity', '1'),
@@ -47,6 +51,17 @@ const headroom = option('enable_headroom', 'false');
 const configuredCss = Astro.locals.argonOverrides.argon_custom_css ?? customCss;
 const customHead = customHtml('custom_html_head', option('custom_html_head'));
 const customFoot = customHtml('custom_html_foot', option('custom_html_foot'));
+const variant = option('code_theme', 'vs2015');
+const codeTheme = codeThemes.includes(variant) ? variant : 'vs2015';
+const smooth = option('enable_smoothscroll_type', 'disabled');
+const smoothScripts: Record<string, string> = { '1': 'smoothscroll1.js', '1_pulse': 'smoothscroll1_pulse.js', '2': 'smoothscroll2.js', '3': 'smoothscroll3.min.js' };
+const math = option('math_render');
+const mathScript = math === 'mathjax3' ? option('mathjax_cdn_url', 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js')
+  : math === 'mathjax2' ? option('mathjax_v2_cdn_url', 'https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS_HTML')
+  : undefined;
+const katex = math === 'katex' ? option('katex_cdn_url').replace(/\/?$/, '/') : undefined;
+const highlightScript = assets.asset(assets.stylesheet.startsWith('/assets/argon/') ? 'highlight.js' : 'vendor/highlight/highlight.min.js');
+const viewport = option('enable_mobile_scale', 'true') !== 'false' ? 'width=device-width,initial-scale=1' : 'width=device-width,initial-scale=1,maximum-scale=1';
 ---
 <!doctype html>
 <html lang={site.language} class:list={[
@@ -55,24 +70,34 @@ const customFoot = customHtml('custom_html_foot', option('custom_html_foot'));
     'toolbar-blur': option('toolbar_blur') === 'true', 'toolbar-mask': option('show_toolbar_mask') === 'true',
     'navbar-absolute': headroom === 'absolute', 'immersion-color': option('enable_immersion_color') === 'true',
     'no-navigation-animation': option('disable_pjax_animation') === 'true',
+    'astro-article-enter': onlyIfOn('enable_into_article_animation'), 'disable-codeblock-style': onlyIfOn('disable_codeblock_style'),
+    'astro-code-wrap': onlyIfOn('code_highlight_break_line'), 'astro-code-transparent': onlyIfOn('code_highlight_transparent_linenumber'),
     'single-column': layout === 'single', 'triple-column': layout === 'triple',
     'double-column-reverse': layout === 'double-reverse', 'transparent-banner': transparent },
 ]} style={css} data-mode={defaultMode} data-font={option('font', 'sans-serif')} data-shadow={option('card_shadow', 'default')}
   data-radius={option('card_radius', '4')} data-color={color} data-katex={option('math_render') === 'katex'} data-started-at={site.started_at}
   data-headroom={headroom} data-amoled={option('enable_amoled_dark') === 'true'} data-color-picker={option('show_customize_theme_color_picker') === 'true'}
   data-highlight={option('enable_code_highlight') === 'true'} data-zoom={option('enable_zoomify') === 'true'} data-pangu={option('enable_pangu')}
-  data-fancybox={option('enable_fancybox', 'true') !== 'false'} data-lazyload={option('enable_lazyload', 'true') !== 'false'}>
+  data-fancybox={option('enable_fancybox', 'true') !== 'false'} data-lazyload={option('enable_lazyload', 'true') !== 'false'}
+  data-lazy-threshold={option('lazyload_threshold', '800')} data-lazy-effect={option('lazyload_effect', 'fadeIn')} data-lazy-style={option('lazyload_loading_style', '1')}
+  data-zoom-duration={option('zoomify_duration', '200')} data-zoom-easing={option('zoomify_easing', 'ease')} data-zoom-scale={option('zoomify_scale', '0.9')}
+  data-show-code-lines={!onlyIfOn('code_highlight_hide_linenumber')} data-highlight-src={highlightScript}
+  data-math-engine={math} data-math-script={mathScript} data-katex-cdn={katex && katex !== '/' ? katex : undefined}
+  data-reference-title={option('reference_list_title', '参考')} data-local-time={onlyIfOn('enable_timezone_fix')}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content={viewport} />
     <title>{pageTitle}</title>
-    <meta name="description" content={description ?? site.description} />
+    <meta name="description" content={description ?? option('seo_description', site.description)} />
+    {option('seo_keywords') && <meta name="keywords" content={option('seo_keywords')} />}
     {restricted ? <meta name="robots" content="noindex,nofollow" /> : <link rel="canonical" href={canonical} />}
     {site.site_icon && <link rel="icon" href={site.site_icon} />}
     <link rel="alternate" type="application/rss+xml" title={site.title} href="/feed/" />
-    <link rel="stylesheet" href="/assets/argon/argon_css_merged.css" />
-    <link rel="stylesheet" href="/assets/argon/style.css" />
-    {option('enable_code_highlight') === 'true' && <link rel="stylesheet" href="/assets/argon/highlight.css" />}
+    <link rel="stylesheet" href={assets.asset('argon_css_merged.css')} />
+    <link rel="stylesheet" href={assets.stylesheet} />
+    {option('disable_googlefont', 'true') !== 'true' && <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700%7CNoto+Serif+SC:300,600&display=swap" />}
+    {option('enable_code_highlight') === 'true' && <link rel="stylesheet" href={assets.asset('vendor/highlight/styles/' + codeTheme + '.css')} />}
+    {smoothScripts[smooth] && <script is:inline src={assets.asset('vendor/smoothscroll/' + smoothScripts[smooth])} defer></script>}
     {configuredCss && <style is:inline set:html={configuredCss} />}
     {customHead && <Fragment set:html={customHead} />}
     {option('pjax_disabled') !== 'true' && <ClientRouter fallback="none" />}
@@ -113,6 +138,10 @@ const customFoot = customHtml('custom_html_foot', option('custom_html_foot'));
           <Footer owner={owner} />
         </main>
       </div>
+      {layout === 'triple' && <aside id="rightbar" aria-label="右侧栏"><div class="card shadow-sm border-0">
+        <h6>最新文章</h6>
+        <ul>{entries.filter((entry) => entry.type === 'post' && !entry.visibility).slice(0, 5).map((entry) => <li><a href={entry.path}>{entry.title}</a></li>)}</ul>
+      </div></aside>}
     </div>
     <dialog id="argon_image_preview" class="image-preview"><button class="argon-close" type="button" data-close-dialog aria-label="关闭">×</button><img alt="" /></dialog>
     {customFoot && <Fragment set:html={customFoot} />}

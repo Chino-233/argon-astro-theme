@@ -1,11 +1,21 @@
 ---
 import type { Entry } from '../lib/types';
+import { siteOptions } from '../lib/site';
+import { issueCaptcha } from '../lib/comment-captcha';
+import { commentMailConfigured } from '../lib/comment-mail';
+import emotions from '../lib/comment-emotions.json';
 
 const { entry, guestbook = false } = Astro.props as { entry: Entry; guestbook?: boolean };
+const option = siteOptions(Astro.locals.argonOverrides);
+const showIdentity = option('hide_name_email_site_input') !== 'true';
+const mail = showIdentity && option('comment_allow_mailnotice') === 'true' && commentMailConfigured();
+const captcha = option('comment_need_captcha') === 'true' ? issueCaptcha(String(entry.id)) : undefined;
+const dynamicCaptcha = captcha && option('get_captcha_by_ajax') === 'true';
 const result = Astro.url.searchParams.get('comment');
 const message = result === 'pending' ? '已提交，站主审核通过后会显示。'
   : result === 'invalid' ? '请检查留言内容、昵称或网站地址。'
-  : result === 'rate' ? '提交太快了，请稍后再试。' : '';
+  : result === 'rate' ? '提交太快了，请稍后再试。'
+  : result === 'captcha' ? '计算题答案有误或已过期，请重试。' : '';
 ---
 <section id="post_comment" class="card shadow-sm border-0">
   <div class="card-body">
@@ -21,10 +31,29 @@ const message = result === 'pending' ? '已提交，站主审核通过后会显�
       <input type="hidden" name="parent" value="0" data-comment-parent />
       <label class="sr-only" for="post_comment_content">留言内容</label>
       <textarea id="post_comment_content" class="form-control form-control-alternative" name="comment" placeholder={guestbook ? '留言内容' : '评论内容'} rows="4" maxlength="4000" required></textarea>
-      <div class="row mt-3">
-        <div class="col-sm-6 mb-2"><label class="sr-only" for="post_comment_name">昵称</label><input id="post_comment_name" class="form-control" name="author" placeholder="昵称（选填）" maxlength="60" autocomplete="nickname" /></div>
-        <div class="col-sm-6 mb-2"><label class="sr-only" for="post_comment_link">网站</label><input id="post_comment_link" class="form-control" name="website" type="url" placeholder="网站（选填）" maxlength="500" /></div>
-      </div>
+      {option('comment_allow_markdown') === 'true' && <small class="form-text text-muted">支持 Markdown 排版</small>}
+      {option('comment_emotion_keyboard') === 'true' && <details class="mt-2">
+        <summary>表情与贴纸</summary>
+        <div class="astro-emotions">
+          {emotions.text.map((face) => <button type="button" class="btn btn-sm btn-outline-secondary" data-comment-insert={face}>{face}</button>)}
+          {Object.entries(emotions.stickers).map(([name, src]) => <button type="button" class="btn btn-sm btn-outline-secondary" aria-label={name} data-comment-insert={'[sticker:' + name + ']'}><img class="astro-comment-sticker" src={'/assets/argon/stickers/' + src} loading="lazy" alt="" /></button>)}
+        </div>
+      </details>}
+      {showIdentity && <>
+        <div class="row mt-3">
+          <div class="col-sm-4 mb-2"><label class="sr-only" for="post_comment_name">昵称</label><input id="post_comment_name" class="form-control" name="author" placeholder="昵称（选填）" maxlength="60" autocomplete="nickname" /></div>
+          <div class="col-sm-4 mb-2"><label class="sr-only" for="post_comment_email">邮箱或 QQ 号</label><input id="post_comment_email" class="form-control" name="email" placeholder={option('comment_enable_qq_avatar') === 'true' ? '邮箱 / QQ 号（选填）' : '邮箱（选填）'} maxlength="254" autocomplete="email" /></div>
+          <div class="col-sm-4 mb-2"><label class="sr-only" for="post_comment_link">网站</label><input id="post_comment_link" class="form-control" name="website" type="url" placeholder="网站（选填）" maxlength="500" /></div>
+        </div>
+        {option('text_gravatar') !== 'true' && <label class="mr-3"><input type="checkbox" name="avatar" /> 显示关联头像</label>}
+        {mail && <label class="mr-3"><input type="checkbox" name="notify" checked={option('comment_mailnotice_checkbox_checked') === 'true'} /> 邮件通知回复</label>}
+      </>}
+      {option('comment_allow_privatemode') === 'true' && <label class="mr-3"><input type="checkbox" name="private" /> 悄悄话（仅自己和站主可见）</label>}
+      {captcha && <div data-captcha-entry={dynamicCaptcha ? entry.id : undefined}>
+        <label for="post_comment_captcha">计算题 <span data-captcha-label>{captcha.label}</span></label>
+        <input type="hidden" name="captcha_token" value={captcha.token} />
+        <input id="post_comment_captcha" class="form-control" name="captcha" inputmode="numeric" maxlength="2" autocomplete="off" required />
+      </div>}
       <div class="text-right mt-2"><button id="post_comment_send" class="btn btn-icon btn-primary" type="submit"><i class="fa fa-paper-plane" aria-hidden="true"></i> 发送</button></div>
     </form>
   </div>

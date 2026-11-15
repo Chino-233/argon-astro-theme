@@ -1,6 +1,8 @@
 ---
 import PostMeta from './PostMeta.astro';
 import type { Entry } from '../lib/types';
+import { firstImage } from '../lib/argon-features';
+import { siteOptions } from '../lib/site';
 
 interface Props {
   entry: Entry;
@@ -10,10 +12,11 @@ interface Props {
   bannerCover?: boolean;
 }
 const { entry, title = entry.title, commentCount = 0, readStats = true, bannerCover = false } = Astro.props;
-const image = !bannerCover && entry.featuredImage;
+const option = siteOptions(Astro.locals.argonOverrides);
+const image = !bannerCover && firstImage(entry, option);
 ---
 <header class:list={['post-header text-center', { 'post-header-with-thumbnail': Boolean(image) }]}>
-  {image && <img class="post-thumbnail" src={image} alt="" />}
+  {image && <img class="post-thumbnail" src={image} alt="" loading={option('enable_lazyload', 'true') === 'true' ? 'lazy' : 'eager'} />}
   <div class:list={[image ? 'post-header-text-container' : 'astro-header-text']}>
     <h1 class="astro-entry-title"><a class="post-title" href={entry.path}>{title}</a></h1>
     <PostMeta entry={entry} commentCount={commentCount} readStats={readStats} />

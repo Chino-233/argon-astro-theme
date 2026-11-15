@@ -2,7 +2,7 @@
 import Layout from '../../layouts/ArgonLayout.astro';
 import { authConfigured, isOwner, preventCaching, returnPath } from '../../lib/auth';
 import { restrictedData } from '../../lib/private-store';
-import { getEntries } from '../../lib/site';
+import { getEntries, siteOptions } from '../../lib/site';
 
 preventCaching(Astro.response.headers);
 const owner = isOwner(Astro.cookies);
@@ -11,9 +11,10 @@ const restricted = owner ? (await restrictedData()).posts : [];
 const configured = authConfigured();
 const failed = Astro.url.searchParams.has('error');
 const next = returnPath(Astro.url.searchParams.get('return'), '/auth/');
+const themed = !owner && siteOptions(Astro.locals.argonOverrides)('enable_login_css') === 'true';
 ---
 <Layout title={owner ? '私密内容' : '站主登录'} entries={entries} owner={owner} restricted>
-  <article class="post card bg-white shadow-sm border-0 astro-form-card">
+  <article class:list={['post card bg-white shadow-sm border-0 astro-form-card', { 'astro-themed-login': themed }]}>
     <div class="card-body">
       <h1 class="post-title">{owner ? '私密内容' : '站主登录'}</h1>
       {owner ? <>

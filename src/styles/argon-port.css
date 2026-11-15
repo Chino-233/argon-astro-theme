@@ -92,6 +92,39 @@ article .astro-entry-title::before, article .astro-entry-title::after { display:
 .astro-share summary { list-style: none; width: fit-content; }
 .astro-share summary::-webkit-details-marker { display: none; }
 .astro-share-links { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+.astro-qr { display: block; margin-top: .5rem; width: min(192px, 100%); height: auto; }
+.astro-outdated-toast {
+  position: fixed; z-index: 1001; top: 5rem; right: 1rem; width: min(22rem, calc(100% - 2rem));
+  box-shadow: 0 4px 24px #0003; display: flex; align-items: start;
+}
+.astro-outdated-toast button { color: inherit; flex: none; }
+.astro-after-post { margin-top: 1rem; }
+.astro-article-enter .post-full { animation: astro-article-enter .3s ease both; }
+@keyframes astro-article-enter { from { transform: translateY(12px); opacity: .6; } to { transform: none; opacity: 1; } }
+.astro-themed-login { max-width: 440px; margin-inline: auto; border-top: 4px solid var(--themecolor) !important; }
+.astro-themed-login form { max-width: none; }
+.astro-code-wrap pre code, .astro-code-wrap pre code .astro-code-line { white-space: pre-wrap; overflow-wrap: anywhere; }
+.astro-code-numbered { counter-reset: argon-line; }
+.astro-code-line { counter-increment: argon-line; padding-inline-start: 3.2rem; display: inline-block; min-width: 100%; position: relative; }
+.astro-code-line::before {
+  content: counter(argon-line); position: absolute; inset: 0 auto 0 0; box-sizing: border-box;
+  width: 2.7rem; text-align: right; padding-inline-end: .5rem; color: inherit; opacity: .65;
+  user-select: none; background-color: #8882; font-variant-numeric: tabular-nums;
+}
+.astro-code-transparent .astro-code-line::before { background-color: transparent; }
+[data-argon-lazy]:not([data-argon-lazy="none"]) { background: var(--color-border-on-foreground) center / 38px no-repeat; }
+[data-argon-lazy="1"] { background-image: url("/assets/argon/loaders/1.svg"); }
+[data-argon-lazy="2"] { background-image: url("/assets/argon/loaders/2.svg"); }
+[data-argon-lazy="3"] { background-image: url("/assets/argon/loaders/3.svg"); }
+[data-argon-lazy="4"] { background-image: url("/assets/argon/loaders/4.svg"); }
+[data-argon-lazy="5"] { background-image: url("/assets/argon/loaders/5.svg"); }
+[data-argon-lazy="6"] { background-image: url("/assets/argon/loaders/6.svg"); }
+[data-argon-lazy="7"] { background-image: url("/assets/argon/loaders/7.svg"); }
+[data-argon-lazy="8"] { background-image: url("/assets/argon/loaders/8.svg"); }
+[data-argon-lazy="9"] { background-image: url("/assets/argon/loaders/9.svg"); }
+[data-argon-lazy="10"] { background-image: url("/assets/argon/loaders/10.svg"); }
+[data-argon-lazy="11"] { background-image: url("/assets/argon/loaders/11.svg"); }
+@media (prefers-reduced-motion: reduce) { [data-argon-lazy] { background-image: none; } }
 .astro-related .card-body > a { display: block; margin-top: .45rem; }
 .astro-form-card form { max-width: 410px; }
 .astro-private-list { padding-left: 1.2rem; }
@@ -108,10 +141,14 @@ article .astro-entry-title::before, article .astro-entry-title::after { display:
 .comment-item-avatar { width: 36px; height: 36px; object-fit: cover; }
 .comment-item-time { font-size: .8rem; margin-left: .6rem; }
 .astro-comment-empty { margin: 0; opacity: .75; }
+.astro-comment-actions, .astro-comment-actions form { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin: 0; }
+.astro-comment-list [hidden] { display: none !important; }
+.astro-emotions { display: flex; flex-wrap: wrap; gap: .25rem; max-height: 14rem; overflow: auto; margin-block: .5rem; }
+.astro-comment-sticker, .comment-item-text img.astro-comment-sticker { width: 2rem; height: 2rem; object-fit: contain; }
 .astro-zoom { cursor: zoom-in; }
 .image-preview { width: auto; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); color: white; background: transparent; }
 .image-preview .argon-close { position: absolute; right: .2rem; top: .15rem; background: #0007; border-radius: 50%; }
-.image-preview img { display: block; max-width: 100%; max-height: calc(100vh - 28px); object-fit: contain; }
+.image-preview img { display: block; max-width: min(100%, calc(100vw * var(--astro-zoom-scale, 1))); max-height: min(calc(100vh - 28px), calc(100vh * var(--astro-zoom-scale, 1))); object-fit: contain; }
 .astro-talk-operations { display: flex; align-items: center; gap: .25rem; }
 .astro-talk-operations form { margin: 0; }
 #post_comment { scroll-margin-top: 80px; }
