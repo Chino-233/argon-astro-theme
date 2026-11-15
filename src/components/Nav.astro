@@ -8,7 +8,7 @@ const icon = option('toolbar_icon');
 ---
 <div id="toolbar">
   <header class="header-global">
-    <nav id="navbar-main" class="navbar navbar-main navbar-expand-lg navbar-transparent navbar-light bg-primary navbar-ontop">
+    <nav id="navbar-main" class="navbar navbar-main navbar-expand-lg navbar-transparent navbar-light bg-primary headroom--pinned navbar-ontop">
       <div class="container">
         <button id="open_sidebar" class="navbar-toggler" type="button" aria-expanded="false" aria-controls="leftbar" aria-label="打开侧栏">
           <span class="navbar-toggler-icon"></span>
@@ -31,8 +31,8 @@ const icon = option('toolbar_icon');
             <li id="navbar_search_container" class="nav-item">
               <form id="navbar_search_input_container" action="/" method="get" data-astro-reload>
                 <div class="input-group input-group-alternative">
-                  <span class="input-group-prepend"><span class="input-group-text"><i class="fa fa-search" aria-hidden="true"></i></span></span>
-                  <input id="navbar_search_input" class="form-control" name="s" placeholder="搜索什么..." aria-label="搜索" autocomplete="off" />
+                  <span class="input-group-prepend"><button type="submit" class="input-group-text" data-desktop-search aria-controls="navbar_search_input" aria-expanded="false" aria-label="打开搜索"><i class="fa fa-search" aria-hidden="true"></i></button></span>
+                  <input id="navbar_search_input" class="form-control" name="s" placeholder="搜索什么..." aria-label="搜索" autocomplete="off" required />
                 </div>
               </form>
             </li>

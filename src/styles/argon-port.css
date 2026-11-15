@@ -1,4 +1,5 @@
 html { scroll-padding-top: 84px; }
+html.navbar-absolute { scroll-padding-top: 16px; }
 :root { --toolbar-color: 255, 255, 255; }
 html.darkmode { --toolbar-color: 35, 36, 41; }
 #navbar-main { background-color: rgba(var(--toolbar-color), var(--argon-scroll-alpha, 0)) !important; }
@@ -25,7 +26,52 @@ html[data-headroom="true"] #navbar-main { transition: transform .24s ease, backg
 .no-navigation-animation::view-transition-old(root), .no-navigation-animation::view-transition-new(root) { animation-duration: 0s; }
 .cover-scroll-down { background: transparent; border: 0; color: white; }
 #sidebar_mask { border: 0; }
+#primary { min-width: 0; transition: none; }
+@media screen and (min-width: 901px) {
+  #content {
+    --argon-sidebar-top: 84px;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-areas: "info info" "sidebar main";
+  }
+  html.double-column-reverse #content {
+    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-areas: "info info" "main sidebar";
+  }
+  html.single-column #content { grid-template-columns: minmax(0, 1fr); grid-template-areas: "info" "main"; }
+  html.navbar-absolute #content,
+  html:has(#navbar-main.astro-navbar-hidden) #content { --argon-sidebar-top: 12px; }
+  #content > .page-information-card-container { grid-area: info; }
+  #leftbar { grid-area: sidebar; }
+  html #primary { grid-area: main; float: none; width: 100%; }
+  #rightbar { grid-area: extras; }
+  #open_sidebar { display: none; }
+  #leftbar_part2 {
+    position: sticky;
+    top: var(--argon-sidebar-top);
+    transition: none;
+  }
+  #leftbar_part2_inner {
+    min-height: 0;
+    max-height: calc(100dvh - var(--argon-sidebar-top) - 20px);
+    overscroll-behavior-y: contain;
+  }
+}
+@media screen and (min-width: 1101px) {
+  html.triple-column #content {
+    grid-template-columns: 280px minmax(0, 1fr) 280px;
+    grid-template-areas: "info info info" "sidebar main extras";
+  }
+  html.triple-column #primary { width: 100%; }
+}
+@media screen and (max-width: 900px) {
+  html #primary { float: none; width: 100%; }
+  #leftbar { visibility: hidden; }
+  html.leftbar-opened #leftbar { visibility: visible; }
+}
 #navbar_search_input_container { margin: 0; }
+#navbar_search_input_container .input-group-text { cursor: pointer; }
+#navbar_search_input_container:not(.open):not(:focus-within) #navbar_search_input { visibility: hidden; }
 .site-state a { cursor: pointer; }
 #leftbar_catalog .astro-toc { padding: 0; margin: 0; list-style: none; }
 #leftbar_catalog .index-link { overflow-wrap: anywhere; word-break: normal; }
@@ -100,6 +146,7 @@ article .astro-entry-title::before, article .astro-entry-title::after { display:
 .astro-outdated-toast button { color: inherit; flex: none; }
 .astro-after-post { margin-top: 1rem; }
 .astro-article-enter .post-full { animation: astro-article-enter .3s ease both; }
+.post-full:has(:target) { animation: none !important; }
 @keyframes astro-article-enter { from { transform: translateY(12px); opacity: .6; } to { transform: none; opacity: 1; } }
 .astro-themed-login { max-width: 440px; margin-inline: auto; border-top: 4px solid var(--themecolor) !important; }
 .astro-themed-login form { max-width: none; }

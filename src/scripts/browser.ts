@@ -5,13 +5,16 @@ type Preferences = Partial<Record<'mode' | 'font' | 'shadow' | 'filter' | 'radiu
 const key = 'argon-astro-prefs';
 const system = matchMedia('(prefers-color-scheme: dark)');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const desktopSidebar = matchMedia('(min-width: 901px)');
 let bannerTimer: number | undefined;
 let scrollQueued = false;
 let highlightLoading: Promise<void> | undefined;
 let previousScroll = 0;
 let catalog: Array<{ link: HTMLAnchorElement; heading: HTMLElement }> = [];
 let currentHeading: HTMLAnchorElement | undefined;
+let catalogScroller: HTMLElement | null;
 let imageObserver: IntersectionObserver | undefined;
+let stopAnchorAlignment: (() => void) | undefined;
 
 function preferences(): Preferences {
   try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; }
@@ -59,11 +62,20 @@ function updateScroll() {
     bar?.classList.toggle('astro-navbar-hidden', document.documentElement.dataset.headroom === 'true' && y > 100 && y > previousScroll);
     previousScroll = y;
   }
-  const nextHeading = catalog.findLast(({ heading }) => heading.getBoundingClientRect().top <= 92)?.link ?? catalog[0]?.link;
+  const readingOffset = document.documentElement.classList.contains('navbar-absolute') ? 24 : 92;
+  const nextHeading = catalog.findLast(({ heading }) => heading.getBoundingClientRect().top <= readingOffset)?.link ?? catalog[0]?.link;
   if (currentHeading !== nextHeading) {
     currentHeading?.removeAttribute('aria-current');
     nextHeading?.setAttribute('aria-current', 'location');
     currentHeading = nextHeading;
+    if (nextHeading && desktopSidebar.matches && catalogScroller && !catalogScroller.matches(':hover')) {
+      const pane = catalogScroller.getBoundingClientRect();
+      const link = nextHeading.getBoundingClientRect();
+      if (link.height && pane.top >= 0 && pane.bottom <= innerHeight) {
+        if (link.bottom > pane.bottom) catalogScroller.scrollTop += link.bottom - pane.bottom + 10;
+        else if (link.top < pane.top) catalogScroller.scrollTop -= pane.top - link.top + 10;
+      }
+    }
   }
   const control = document.getElementById('fabtn_back_to_top');
   control?.classList.toggle('argon-fab-hidden', y < 160);
@@ -83,6 +95,35 @@ function queueScroll() {
     scrollQueued = true;
     requestAnimationFrame(updateScroll);
   }
+}
+
+function alignLinkedHeading() {
+  stopAnchorAlignment?.();
+  const fragment = location.hash;
+  const target = catalog.find(({ link }) => link.getAttribute('href') === fragment)?.heading;
+  if (!target) return;
+
+  const input = new AbortController();
+  const align = () => {
+    if (input.signal.aborted || !target.isConnected || location.hash !== fragment) return;
+    const top = target.getBoundingClientRect().top;
+    const offset = Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop);
+    if (top < offset - 2 && top > -innerHeight / 2) {
+      window.scrollBy({ top: top - offset, behavior: 'instant' });
+    }
+  };
+  const observer = new ResizeObserver(align);
+  const article = target.closest('article');
+  if (article) observer.observe(article);
+  const stop = () => { input.abort(); observer.disconnect(); };
+  stopAnchorAlignment = stop;
+  for (const event of ['wheel', 'pointerdown', 'touchstart', 'keydown']) {
+    window.addEventListener(event, stop, { once: true, passive: true, signal: input.signal });
+  }
+  requestAnimationFrame(align);
+  window.addEventListener('load', () => requestAnimationFrame(align), { once: true, signal: input.signal });
+  void document.fonts.ready.then(() => requestAnimationFrame(align));
+  window.setTimeout(() => { align(); stop(); }, 700);
 }
 
 function updateClocks() {
@@ -234,6 +275,8 @@ function initPage() {
     const heading = document.getElementById(link.dataset.tocId ?? '');
     return heading ? [{ link, heading }] : [];
   });
+  catalogScroller = document.getElementById('leftbar_part2_inner');
+  alignLinkedHeading();
   updateScroll();
   updateClocks();
   try { bannerTyping(); } catch { /* Storage can be disabled. */ }
@@ -322,6 +365,7 @@ document.addEventListener('focusin', (event) => {
 });
 
 function drawer(open: boolean) {
+  if (open && desktopSidebar.matches) return;
   document.documentElement.classList.toggle('leftbar-opened', open);
   document.getElementById('open_sidebar')?.setAttribute('aria-expanded', String(open));
 }
@@ -344,6 +388,26 @@ function openImage(img: HTMLImageElement) {
 document.addEventListener('click', (event) => {
   if (!(event.target instanceof Element)) return;
   const target = event.target;
+  const desktopSearch = target.closest<HTMLButtonElement>('[data-desktop-search]');
+  if (desktopSearch) {
+    const form = desktopSearch.form;
+    const input = form?.querySelector<HTMLInputElement>('#navbar_search_input');
+    if (!form?.classList.contains('open') || !input?.value.trim()) {
+      event.preventDefault();
+      form?.classList.add('open');
+      desktopSearch.setAttribute('aria-expanded', 'true');
+      desktopSearch.setAttribute('aria-label', '提交搜索');
+      input?.focus();
+    }
+    return;
+  }
+  const openSearch = document.querySelector<HTMLFormElement>('#navbar_search_input_container.open');
+  if (openSearch && !openSearch.contains(target)) {
+    openSearch.classList.remove('open');
+    const searchButton = openSearch.querySelector('[data-desktop-search]');
+    searchButton?.setAttribute('aria-expanded', 'false');
+    searchButton?.setAttribute('aria-label', '打开搜索');
+  }
   const dismiss = target.closest('[data-dismiss-outdated]');
   if (dismiss) { dismiss.closest('.astro-outdated-toast')?.remove(); return; }
   const insertion = target.closest<HTMLButtonElement>('[data-comment-insert]');
@@ -445,6 +509,7 @@ document.addEventListener('astro:page-load', () => {
 });
 window.addEventListener('scroll', queueScroll, { passive: true });
 window.addEventListener('resize', queueScroll);
+desktopSidebar.addEventListener('change', () => { if (desktopSidebar.matches) drawer(false); });
 system.addEventListener('change', applyPreferences);
 window.setInterval(updateClocks, 1000);
 if (document.readyState === 'loading') {
