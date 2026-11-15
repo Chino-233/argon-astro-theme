@@ -9,6 +9,9 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let bannerTimer: number | undefined;
 let scrollQueued = false;
 let highlightLoading: Promise<void> | undefined;
+let previousScroll = 0;
+let catalog: Array<{ link: HTMLAnchorElement; heading: HTMLElement }> = [];
+let currentHeading: HTMLAnchorElement | undefined;
 
 function preferences(): Preferences {
   try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; }
@@ -17,10 +20,10 @@ function preferences(): Preferences {
 function applyPreferences() {
   const root = document.documentElement;
   const settings = preferences();
-  const mode = settings.mode ?? root.dataset.mode;
+  const mode = settings.mode === 'black' && root.dataset.amoled !== 'true' ? 'dark' : settings.mode ?? root.dataset.mode;
   const dark = ['dark', 'black', 'alwayson'].includes(mode ?? '') ||
     (mode === 'system' && system.matches) ||
-    (mode === 'time' && (new Date().getHours() >= 19 || new Date().getHours() < 7));
+    (mode === 'time' && (new Date().getHours() >= 22 || new Date().getHours() < 7));
   root.classList.toggle('darkmode', dark);
   root.classList.toggle('amoled-dark', mode === 'black');
   root.dataset.selectedFont = settings.font ?? root.dataset.font;
@@ -28,7 +31,7 @@ function applyPreferences() {
   root.dataset.filter = settings.filter ?? 'off';
   const radius = Number(settings.radius ?? root.dataset.radius);
   if (Number.isFinite(radius) && radius >= 0 && radius <= 30) root.style.setProperty('--card-radius', radius + 'px');
-  const color = settings.color ?? root.dataset.color ?? '';
+  const color = (root.dataset.colorPicker === 'true' ? settings.color : undefined) ?? root.dataset.color ?? '';
   if (/^#[\da-f]{6}$/i.test(color)) {
     for (const [name, value] of Object.entries(colorPalette(color))) root.style.setProperty(name, value);
   }
@@ -52,6 +55,16 @@ function updateScroll() {
   const alpha = Math.min(.93, y / max * .93);
   bar?.classList.toggle('navbar-ontop', y < 8);
   bar?.style.setProperty('--argon-scroll-alpha', String(alpha));
+  if (y !== previousScroll || y < 100) {
+    bar?.classList.toggle('astro-navbar-hidden', document.documentElement.dataset.headroom === 'true' && y > 100 && y > previousScroll);
+    previousScroll = y;
+  }
+  const nextHeading = catalog.findLast(({ heading }) => heading.getBoundingClientRect().top <= 92)?.link ?? catalog[0]?.link;
+  if (currentHeading !== nextHeading) {
+    currentHeading?.removeAttribute('aria-current');
+    nextHeading?.setAttribute('aria-current', 'location');
+    currentHeading = nextHeading;
+  }
   const control = document.getElementById('fabtn_back_to_top');
   control?.classList.toggle('argon-fab-hidden', y < 160);
   const article = document.getElementById('post_content');
@@ -133,8 +146,9 @@ function setMedia(element: HTMLElement) {
   element.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
     const original = img.dataset.original ?? img.dataset.src ?? img.dataset.lazySrc;
     if (original && !img.getAttribute('src')?.startsWith('/wp-content/uploads/')) img.src = original;
-    img.loading = 'lazy';
-    if (document.documentElement.dataset.zoom === 'true' && !img.closest('a,button')) {
+    img.loading = document.documentElement.dataset.lazyload === 'true' ? 'lazy' : 'eager';
+    const { zoom, fancybox } = document.documentElement.dataset;
+    if ((zoom === 'true' || fancybox === 'true') && !img.closest('a,button')) {
       img.classList.add('astro-zoom');
       img.tabIndex = 0;
     }
@@ -160,6 +174,11 @@ async function highlight() {
 
 function initPage() {
   applyPreferences();
+  previousScroll = scrollY;
+  catalog = [...document.querySelectorAll<HTMLAnchorElement>('[data-toc-id]')].flatMap((link) => {
+    const heading = document.getElementById(link.dataset.tocId ?? '');
+    return heading ? [{ link, heading }] : [];
+  });
   updateScroll();
   updateClocks();
   try { bannerTyping(); } catch { /* Storage can be disabled. */ }
@@ -268,7 +287,9 @@ document.addEventListener('change', (event) => {
     savePreference(target.name as keyof Preferences, target.value);
   }
 });
-document.addEventListener('astro:before-preparation', () => { document.documentElement.classList.add('argon-loading'); });
+document.addEventListener('astro:before-preparation', () => {
+  if (!document.documentElement.classList.contains('no-navigation-animation')) document.documentElement.classList.add('argon-loading');
+});
 document.addEventListener('astro:after-swap', applyPreferences);
 document.addEventListener('astro:page-load', () => {
   document.documentElement.classList.remove('argon-loading');

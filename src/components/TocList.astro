@@ -1,0 +1,27 @@
+---
+import TocList from './TocList.astro';
+import type { Heading } from '../lib/types';
+
+export interface HeadingNode extends Heading {
+  children: HeadingNode[];
+}
+
+interface Props {
+  nodes: HeadingNode[];
+  numbered: boolean;
+  parentNumber?: string;
+}
+
+const { nodes, numbered, parentNumber } = Astro.props;
+---
+<ol class:list={['astro-toc', { 'index-subItem-box': parentNumber }]}>
+  {nodes.map((heading, index) => {
+    const number = parentNumber ? parentNumber + '.' + (index + 1) : String(index + 1);
+    return <li class="index-item">
+      <a class="index-link" href={'#' + encodeURIComponent(heading.id)} data-toc-id={heading.id}>
+        {numbered && <span class="astro-toc-number">{number}{' '}</span>}{heading.label}
+      </a>
+      {heading.children.length > 0 && <TocList nodes={heading.children} numbered={numbered} parentNumber={number} />}
+    </li>;
+  })}
+</ol>

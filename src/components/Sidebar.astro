@@ -1,19 +1,29 @@
 ---
 import { canonicalPath, menus, siteOptions, safeLink, terms } from '../lib/site';
-import type { Entry } from '../lib/types';
+import TocList, { type HeadingNode } from './TocList.astro';
+import type { Entry, Heading } from '../lib/types';
 
 interface Props {
   entries: Entry[];
-  headings?: Array<{ id: string; label: string; depth: number }>;
+  headings?: Heading[];
 }
 const { entries, headings = [] } = Astro.props;
 const current = canonicalPath(Astro.url.pathname);
 const items = menus.leftbar_menu ?? [];
 const count = entries.filter((entry) => entry.type === 'post').length;
-const archive = entries.find((entry) => entry.template === 'timeline.php')?.path ?? '/archive/';
-const panels = [...(headings.length ? [['catalog', '文章目录']] : []), ['overview', '站点概览'], ['tools', '功能']];
 const option = siteOptions(Astro.locals.argonOverrides);
+const archive = safeLink(option('archives_timeline_url', entries.find((entry) => entry.template === 'timeline.php')?.path ?? '/archive/'));
 const announcement = option('sidebar_announcement');
+const outline: HeadingNode[] = [];
+const parents: HeadingNode[] = [];
+for (const heading of headings) {
+  if (!heading.label) continue;
+  while (parents.length && parents[parents.length - 1].depth >= heading.depth) parents.pop();
+  const node: HeadingNode = { ...heading, children: [] };
+  (parents[parents.length - 1]?.children ?? outline).push(node);
+  parents.push(node);
+}
+const panels = [...(outline.length ? [['catalog', '文章目录']] : []), ['overview', '站点概览'], ['tools', '功能']];
 ---
 <button id="sidebar_mask" type="button" aria-label="关闭侧栏"></button>
 <aside id="leftbar" class="leftbar widget-area" aria-label="侧栏">
@@ -58,22 +68,14 @@ const announcement = option('sidebar_announcement');
         </ul>
       </div>
       <div class="tab-content" style="padding:10px 10px 0">
-        {headings.length > 0 && (
+        {outline.length > 0 && (
           <div class="tab-pane fade active show" id="leftbar_tab_catalog" role="tabpanel" aria-labelledby="leftbar_tab_catalog_btn">
             <nav id="leftbar_catalog" aria-label="文章目录">
-              <ol class="astro-toc">
-                {headings.map(({ id, label, depth }, i) => (
-                  <li style={'--toc-depth:' + Math.max(0, depth - headings[0].depth)}>
-                    <a href={'#' + encodeURIComponent(id)}>
-                      {option('show_headindex_number') === 'true' && <span>{i + 1}. </span>}{label}
-                    </a>
-                  </li>
-                ))}
-              </ol>
+              <TocList nodes={outline} numbered={option('show_headindex_number') === 'true'} />
             </nav>
           </div>
         )}
-        <div class:list={['tab-pane fade text-center', { active: !headings.length, show: !headings.length }]} id="leftbar_tab_overview" role="tabpanel" aria-labelledby="leftbar_tab_overview_btn">
+        <div class:list={['tab-pane fade text-center', { active: !outline.length, show: !outline.length }]} id="leftbar_tab_overview" role="tabpanel" aria-labelledby="leftbar_tab_overview_btn">
           {option('sidebar_auther_image') && <div id="leftbar_overview_author_image" class="rounded-circle shadow-sm" role="img" aria-label="作者头像" style={'background-image:url("' + option('sidebar_auther_image') + '")'} />}
           <h6 id="leftbar_overview_author_name">{option('sidebar_auther_name')}</h6>
           <h6 id="leftbar_overview_author_description">{option('sidebar_author_description')}</h6>

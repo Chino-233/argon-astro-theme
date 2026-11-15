@@ -22,8 +22,12 @@ const visible = fields.filter((key) => (
   (key === 'comments' && commentCount)
 ));
 const showStats = readStats && option('show_readingtime', 'true') !== 'false';
-const stats = showStats ? articleStats(entry) : { words: 0, minutes: 0 };
-const minutes = entry.readingTime ?? (stats.words === 0 ? '几秒读完' : stats.minutes === 1 ? '1 分钟内' : stats.minutes + ' 分钟');
+const speeds = [Number(option('reading_speed', '300')), Number(option('reading_speed_en', '160')), Number(option('reading_speed_code', '20'))] as const;
+const stats = showStats ? articleStats(entry, speeds) : { words: 0, minutes: 0 };
+const useImportedTime = speeds[0] === 300 && speeds[1] === 160 && speeds[2] === 20;
+const minutes = (useImportedTime ? entry.readingTime : undefined) ?? (
+  stats.minutes < .3 ? '几秒读完' : stats.minutes < 1 ? '1 分钟内' : Math.ceil(stats.minutes) + ' 分钟'
+);
 ---
 {(visible.length > 0 || showStats) && <div class="post-meta">
   {visible.map((key, index) => <>

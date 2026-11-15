@@ -15,18 +15,29 @@ html.transparent-banner #banner, html.transparent-banner #banner .shape { backgr
 #content::after { background-image: var(--argon-background-dark); opacity: 0; }
 html.darkmode #content::before { opacity: 0; }
 html.darkmode #content::after { opacity: var(--argon-background-opacity, 1); }
-#banner::after {
+.toolbar-mask #banner::after {
   content: ""; position: absolute; inset: 0 0 auto; height: 120px; z-index: -1;
   background: linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.15) 35%, transparent);
 }
-.banner-title { text-shadow: 0 5px 15px rgba(0,0,0,.2); }
+.toolbar-mask .banner-title { text-shadow: 0 5px 15px rgba(0,0,0,.2); }
+html[data-headroom="true"] #navbar-main { transition: transform .24s ease, background-color .24s ease; }
+#navbar-main.astro-navbar-hidden:not(:focus-within) { transform: translateY(-100%); }
+.no-navigation-animation::view-transition-old(root), .no-navigation-animation::view-transition-new(root) { animation-duration: 0s; }
 .cover-scroll-down { background: transparent; border: 0; color: white; }
 #sidebar_mask { border: 0; }
 #navbar_search_input_container { margin: 0; }
 .site-state a { cursor: pointer; }
-#leftbar_catalog .astro-toc { padding: .25rem 0; margin: 0; list-style: none; }
-.astro-toc li { padding-left: calc(var(--toc-depth) * 12px); line-height: 1.5; padding-bottom: .25rem; }
-.astro-toc a { overflow-wrap: anywhere; }
+#leftbar_catalog .astro-toc { padding: 0; margin: 0; list-style: none; }
+#leftbar_catalog .index-link { overflow-wrap: anywhere; word-break: normal; }
+#leftbar_catalog .index-link[aria-current="location"] { color: var(--themecolor); font-weight: bold; }
+.astro-list-cards[data-columns]:not([data-columns="1"]) { column-gap: 0; }
+.astro-list-cards[data-columns]:not([data-columns="1"]) > * { break-inside: avoid; }
+@media (min-width: 768px) {
+  .astro-list-cards[data-columns]:not([data-columns="1"]) { column-count: 2; }
+}
+@media (min-width: 1280px) {
+  .astro-list-cards[data-columns="3"], .astro-list-cards[data-columns="2and3"] { column-count: 3; }
+}
 #yearprogress_text_container { height: 22px; overflow: hidden; }
 #yearprogress_text_container span { display: block; transition: transform .3s ease; }
 #yearprogress_text_container:hover span { transform: translateY(-22px); }
@@ -56,7 +67,6 @@ html.darkmode.amoled-dark .card, html.darkmode.amoled-dark .argon-dialog { backg
   background: var(--themecolor); box-shadow: 0 0 10px var(--themecolor); animation: argon-loading 1.2s ease-out both;
 }
 @keyframes argon-loading { from { width: 3vw; } to { width: 92vw; } }
-.post-content [id] { scroll-margin-top: 80px; }
 .post-full .post-header { text-align: center; }
 article .astro-entry-title { margin: 0; padding: 0; }
 article .astro-entry-title::before, article .astro-entry-title::after { display: none !important; }
@@ -78,6 +88,10 @@ article .astro-entry-title::before, article .astro-entry-title::after { display:
 .wp-block-gallery .wp-block-image { flex: 1 1 140px; }
 .wp-block-table { overflow-x: auto; }
 .astro-article-footer { padding: .25rem 1.75rem 1.25rem; }
+.astro-share { display: inline-block; }
+.astro-share summary { list-style: none; width: fit-content; }
+.astro-share summary::-webkit-details-marker { display: none; }
+.astro-share-links { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
 .astro-related .card-body > a { display: block; margin-top: .45rem; }
 .astro-form-card form { max-width: 410px; }
 .astro-private-list { padding-left: 1.2rem; }

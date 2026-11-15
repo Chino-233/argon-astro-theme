@@ -1,7 +1,8 @@
 ---
-import { stamp } from '../lib/site';
+import { siteOptions, stamp } from '../lib/site';
 import type { Entry } from '../lib/types';
 const { entries } = Astro.props as { entries: Entry[] };
+const showMonth = siteOptions(Astro.locals.argonOverrides)('archives_timeline_show_month', 'true') === 'true';
 const groups = new Map<string, Map<string, Entry[]>>();
 for (const entry of entries) {
   const { year, month } = stamp(entry.published);
@@ -16,7 +17,7 @@ for (const entry of entries) {
   {[...groups].map(([year, months]) => <>
     <div class="argon-timeline-node"><div class="argon-timeline-time archive-timeline-year"><a href={'/' + year + '/'}>{year}</a></div><div class="argon-timeline-card card bg-gradient-secondary archive-timeline-title"></div></div>
     {[...months].map(([month, entriesInMonth]) => <>
-      <div class="argon-timeline-node"><div class="argon-timeline-time archive-timeline-month"><a href={'/' + year + '/' + month.padStart(2, '0') + '/'}>{month} 月</a></div><div class="argon-timeline-card card bg-gradient-secondary archive-timeline-title"></div></div>
+      {showMonth && <div class="argon-timeline-node"><div class="argon-timeline-time archive-timeline-month"><a href={'/' + year + '/' + month.padStart(2, '0') + '/'}>{month} 月</a></div><div class="argon-timeline-card card bg-gradient-secondary archive-timeline-title"></div></div>}
       {entriesInMonth.map((entry) => <div class="argon-timeline-node">
         <div class="argon-timeline-time">{month}-{stamp(entry.published).day}</div>
         <div class="argon-timeline-card card bg-gradient-secondary archive-timeline-title"><a href={entry.path}>{entry.title}</a></div>

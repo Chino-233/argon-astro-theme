@@ -1,0 +1,26 @@
+---
+import { site } from '../lib/site';
+import type { Entry } from '../lib/types';
+
+const { entry, mode } = Astro.props as { entry: Entry; mode: string };
+const url = encodeURIComponent(new URL(entry.path, site.url).href);
+const title = encodeURIComponent(entry.title);
+const domestic = [
+  ['QQ', 'https://connect.qq.com/widget/shareqq/index.html?url=' + url + '&title=' + title],
+  ['QQ 空间', 'https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=' + url + '&title=' + title],
+  ['微博', 'https://service.weibo.com/share/share.php?url=' + url + '&title=' + title],
+];
+const abroad = [
+  ['Facebook', 'https://www.facebook.com/sharer/sharer.php?u=' + url],
+  ['X', 'https://twitter.com/intent/tweet?url=' + url + '&text=' + title],
+  ['Telegram', 'https://t.me/share/url?url=' + url + '&text=' + title],
+];
+const links = [...(mode !== 'abroad' ? domestic : []), ...(mode !== 'domestic' ? abroad : [])];
+---
+<details class="astro-share">
+  <summary class="btn btn-sm btn-outline-primary"><i class="fa fa-share-alt" aria-hidden="true"></i> 分享</summary>
+  <div class="astro-share-links">
+    {links.map(([label, href]) => <a class="btn btn-sm btn-outline-primary" href={href} target="_blank" rel="noopener noreferrer">{label}</a>)}
+    <button class="btn btn-sm btn-outline-primary" type="button" data-copy-link>复制链接</button>
+  </div>
+</details>

@@ -5,6 +5,6 @@ const { owner = false } = Astro.props;
 ---
 <footer id="footer" class="site-footer card shadow-sm border-0">
   <Fragment set:html={option('footer_html')} />
-  <div>Theme <a href="https://github.com/solstice23/argon-theme" target="_blank" rel="noopener noreferrer"><strong>Argon</strong></a></div>
+  <div>Theme <a href="https://github.com/solstice23/argon-theme" target="_blank" rel="noopener noreferrer"><strong>Argon</strong></a>{option('hide_footer_author') !== 'true' && ' By solstice23'}</div>
   {owner && <a href="/auth/">私密内容</a>}
 </footer>

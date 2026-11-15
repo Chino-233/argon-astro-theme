@@ -2,7 +2,7 @@ import { getCollection } from 'astro:content';
 import data from '../data/site.json';
 import imported from '../data/posts.json';
 import history from '../data/comments.json';
-import type { Comment, Entry, MenuItem, Term } from './types';
+import type { Comment, Entry, Heading, MenuItem, Term } from './types';
 import { option as selectOption } from './argon-options';
 
 export const site = data.site as typeof data.site & { started_at?: string };
@@ -61,23 +61,28 @@ export async function getEntries() {
   return entries;
 }
 
-export function articleStats(entry: Entry) {
-  const clean = stripTags(entry.html.replace(/<pre[\s\S]*?<\/pre>/gi, ' '));
+export function articleStats(entry: Entry, [hanSpeed, wordSpeed, codeSpeed]: readonly [number, number, number]) {
+  let codeLines = 0;
+  const clean = stripTags(entry.html.replace(/<pre\b[^>]*>([\s\S]*?)<\/pre>/gi, (_, code: string) => {
+    codeLines += code.trim().split(/\r?\n/).filter(Boolean).length;
+    return ' ';
+  }));
   const han = clean.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/gu)?.length ?? 0;
   const words = clean.match(/\b[\w]+(?:[-’'][\w]+)*\b/g)?.length ?? 0;
-  return { words: han + words, minutes: Math.max(1, Math.ceil(han / 290 + words / 200)) };
+  return { words: han + words + codeLines, minutes: han / hanSpeed + words / wordSpeed + codeLines / codeSpeed };
 }
 
 export function headings(markup: string, prefix: string) {
-  const links: Array<{ id: string; label: string; depth: number }> = [];
+  const links: Heading[] = [];
   const taken = new Set<string>();
-  const html = markup.replace(/<h([1-5])([^>]*)>([\s\S]*?)<\/h\1>/gi,
+  const html = markup.replace(/<h([1-6])\b([^>]*)>([\s\S]*?)<\/h\1>/gi,
     (_, depth, attrs: string, inner: string) => {
-      const oldId = attrs.match(/\bid="([^"]+)"/)?.[1];
+      const idAttr = attrs.match(/\s+id\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>]+))/i);
+      const oldId = idAttr?.[1] || idAttr?.[2] || idAttr?.[3];
       const id = oldId ?? (prefix + '-' + (links.length + 1));
       if (!taken.has(id)) links.push({ id, label: stripTags(inner), depth: Number(depth) });
       taken.add(id);
-      return '<h' + depth + attrs + (oldId ? '' : ' id="' + id + '"') + '>' + inner + '</h' + depth + '>';
+      return '<h' + depth + (oldId ? attrs : attrs.replace(idAttr?.[0] ?? '', '') + ' id="' + id + '"') + '>' + inner + '</h' + depth + '>';
     });
   return { html, links };
 }

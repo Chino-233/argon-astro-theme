@@ -1,13 +1,13 @@
 ---
 import { siteOptions } from '../lib/site';
 const option = siteOptions(Astro.locals.argonOverrides);
-const { showProgress = false } = Astro.props;
+const { showProgress = false, commentTarget } = Astro.props;
 const settings = option('fab_show_settings_button', 'true') !== 'false';
 ---
 <div id="float_action_buttons" class="float-action-buttons">
   {settings && <button id="fabtn_toggle_blog_settings_popup" class="btn btn-icon btn-neutral fabtn shadow-sm" type="button" data-open-dialog="theme_preferences" title="博客设置" aria-label="博客设置"><i class="fa fa-cog" aria-hidden="true"></i></button>}
   {option('fab_show_darkmode_button') === 'true' && <button id="fabtn_toggle_darkmode" class="btn btn-icon btn-neutral fabtn shadow-sm" type="button" data-toggle-dark title="切换夜间模式" aria-label="切换夜间模式"><i class="fa fa-moon-o" aria-hidden="true"></i></button>}
-  {option('fab_show_gotocomment_button') === 'true' && <a id="fabtn_go_to_comment" href="#post_comment" class="btn btn-icon btn-neutral fabtn shadow-sm" title="评论" aria-label="评论"><i class="fa fa-comments" aria-hidden="true"></i></a>}
+  {commentTarget && option('fab_show_gotocomment_button') === 'true' && <a id="fabtn_go_to_comment" href={commentTarget} class="btn btn-icon btn-neutral fabtn shadow-sm" title="评论" aria-label="评论"><i class="fa fa-comments" aria-hidden="true"></i></a>}
   {showProgress && <button id="fabtn_reading_progress" class="btn btn-icon btn-neutral fabtn shadow-sm" type="button" data-back-top title="阅读进度"><span id="fabtn_reading_progress_bar"></span><span id="fabtn_reading_progress_details">0%</span></button>}
   <button id="fabtn_back_to_top" class="btn btn-icon btn-neutral fabtn shadow-sm" type="button" data-back-top title="回到顶部" aria-label="回到顶部"><i class="fa fa-chevron-up" aria-hidden="true"></i></button>
 </div>

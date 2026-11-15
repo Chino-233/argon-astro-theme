@@ -22,6 +22,12 @@ export interface Entry {
   media?: string[];
 }
 
+export interface Heading {
+  id: string;
+  label: string;
+  depth: number;
+}
+
 export interface Comment {
   id: number;
   post_id: Entry['id'];

@@ -1,8 +1,10 @@
 ---
-import { canonicalPath, menus, safeLink, site } from '../lib/site';
+import { canonicalPath, menus, safeLink, site, siteOptions } from '../lib/site';
 
 const items = menus.toolbar_menu ?? [];
 const current = canonicalPath(Astro.url.pathname);
+const option = siteOptions(Astro.locals.argonOverrides);
+const icon = option('toolbar_icon');
 ---
 <div id="toolbar">
   <header class="header-global">
@@ -12,7 +14,8 @@ const current = canonicalPath(Astro.url.pathname);
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="navbar-brand mr-0">
-          <a class="navbar-brand navbar-title" href="/">{site.title}</a>
+          {icon && <a class="navbar-brand navbar-icon mr-lg-2" href={safeLink(option('toolbar_icon_link', '/'))}><img src={safeLink(icon)} alt={site.title} /></a>}
+          <a class="navbar-brand navbar-title" href="/">{option('toolbar_title', site.title)}</a>
         </div>
         <div class="navbar-collapse collapse" id="navbar_global">
           <ul class="navbar-nav navbar-nav-hover align-items-lg-center">
