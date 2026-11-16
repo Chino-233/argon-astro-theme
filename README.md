@@ -1,35 +1,87 @@
 # Argon Astro
 
-Argon WordPress 主题的 Astro 移植版。沿用 Argon 1.3.5 的 CSS、图标和页面结构，包含双栏博客、文章目录、说说、归档、搜索、主题切换及阅读进度。
+Argon Astro 是面向个人博客的 Astro 主题，沿用 [Argon](https://github.com/solstice23/argon-theme) 的视觉设计。项目以 Markdown 编写内容，以 Node.js 服务提供搜索、留言和站主管理。
 
-上游基线为 [v1.3.5](https://github.com/solstice23/argon-theme/releases/tag/v1.3.5)，并跟进 [`master` 至 `aaef37c77`](https://github.com/solstice23/argon-theme/compare/v1.3.5...aaef37c77) 的顶栏三级菜单、链接分享预览、留言板标题翻译和特殊字符搜索。主题运行在 Astro，WordPress 的后台插件、Gutenberg 区块和 PHP 短代码需各自适配。
+## 特性
 
-## 本地运行
+- 响应式布局、三级导航、日间与夜间模式，以及可配置的配色、字体和 Banner。
+- 分级文章目录、阅读进度、代码高亮、数学公式和图片灯箱。
+- 文章、独立页面、说说、归档和友链，以及站内搜索、RSS 和站点地图。
+- 可审核的评论和留言，支持回复、Markdown、表情、编辑、置顶及可选的邮件通知。
+
+## 快速开始
 
 需要 Node.js 22.23.4 或更新版本。
 
 ```bash
+git clone https://github.com/Chino-233/argon-astro-theme.git
+cd argon-astro-theme
 npm ci
 npm run dev
 ```
 
-默认开发地址是 `http://localhost:4321/`。生产构建用 `npm run build`，用 `npm start` 启动 Node 服务。支持 `HOST` 和 `PORT` 环境变量。动态搜索和可选的访问控制需要 Node 服务。
+浏览器访问 [http://localhost:4321/](http://localhost:4321/)。
 
 ## 配置站点
 
-- 在 `src/data/site.json` 设置站点域名、标题、语言、主题色、Banner、背景、分类和菜单。
-- 在 `src/content/posts/` 添加 Markdown 文章或页面。已有示例演示了 `title`、`date` 和 `path` 的写法。每篇文章的 `path` 应唯一。
-- `src/data/posts.json` 可保存已渲染的 HTML 条目，包括首页混排的说说。
-- `src/data/site.json` 中的两套菜单通过 `id` 和 `parent` 表示层级。父级可用 `url: "#"` 作为纯分组，示例顶栏的「浏览」包含两个可折叠分组。
-- Markdown 页面可用 `template: friendlinks` 和 `linkStyle: cards|square|compact|large` 展示 `bookmarks` 中的友链。为条目指定 `searchType`，可在 `searchTypes` 配置显示名称，再用后台「搜索类型」决定显示顺序和默认勾选状态。
-- `src/data/comments.json` 支持展示已导入的历史评论。新留言和修改在 `/auth/comments/` 审核，留言、点赞和置顶保存在 `ARGON_STATE_DIR`。访客可用发送留言时的浏览器编辑留言和查看自己的悄悄话。
+| 文件或目录 | 用途 |
+| --- | --- |
+| [`src/data/site.json`](src/data/site.json) | 站点域名、标题、语言、时区、主题默认值、菜单和友链 |
+| [`src/content/posts/`](src/content/posts/) | Markdown 文章、页面和说说 |
+| [`src/data/posts.json`](src/data/posts.json) | 已渲染的 HTML 条目 |
+| [`public/`](public/) | 可公开访问的图片及其他静态文件 |
+| [`.env.example`](.env.example) | 运行环境变量 |
 
-可选的站主登录位于 `/auth/`。用 `npm run admin:setup` 设置站主密码。若使用受限内容，另准备仓库外的运行目录并以 `npm run admin:setup -- --private-dir <路径>` 配置。受限目录中的 `entries.json` 使用 `{ "posts": [], "comments": [] }` 结构，文件放在 `uploads/`。条目的 `visibility` 可为 `private` 或 `password`，服务端会校验条目及其授权媒体。用于生产时，通过 HTTPS 访问。
+发布前将 `src/data/site.json` 的 `site.url` 设为站点的正式地址。导航使用 `id` 和 `parent` 表示层级，`parent: 0` 表示顶层，`url: "#"` 表示分组。友链配置在 `bookmarks` 中。
 
-站主登录后访问 `/auth/argon/` 可以修改主题设置并导入或导出 JSON。后台修改默认保存在 Git 忽略的 `.argon-state/`，部署时可以用 `ARGON_STATE_DIR` 指定持久目录。
+### 发布内容
 
-要发送回复通知，先在服务端配置 `ARGON_SMTP_URL` 和 `ARGON_MAIL_FROM`，再在 Argon 设置开启邮件通知。访客收到确认邮件并确认后才会接收回复通知。
+在 `src/content/posts/` 新建 Markdown 文件。每篇内容需要标题、日期和唯一的 URL 路径。
+
+```markdown
+---
+title: 第一篇文章
+date: 2026-01-01
+path: /posts/hello/
+---
+
+从这里开始写正文。
+```
+
+`type` 默认为 `post`，也可设为 `page` 或 `shuoshuo`。友链页使用 `type: page` 和 `template: friendlinks`，布局由 `linkStyle` 选择。可用值为 `cards`、`square`、`compact` 和 `large`。
+
+### 管理后台
+
+在交互式终端中运行 `npm run admin:setup`，按提示设置站主密码。命令会创建包含密码哈希和会话密钥的 `.env`。启动或重启服务后，访问 `/auth/` 登录。
+
+| 路径 | 用途 |
+| --- | --- |
+| `/auth/argon/` | 编辑主题设置，导入或导出配置 |
+| `/auth/comments/` | 审核新留言和留言修改 |
+
+需要私密内容时，用 `npm run admin:setup -- --private-dir <目录>` 初始化，或在服务环境中设置 `ARGON_PRIVATE_CONTENT_DIR`。该目录放在仓库外，包含 `entries.json` 和受保护的 `uploads/`。`entries.json` 采用 `{ "posts": [], "comments": [] }` 结构，条目的 `visibility` 可设为 `private` 或 `password`。
+
+## 自托管
+
+```bash
+npm run build
+npm start
+```
+
+将 Node.js 服务置于 HTTPS 反向代理后。使用 `HOST` 和 `PORT` 设置监听地址与端口。部署时为以下目录提供持久存储，并单独保管服务器环境配置。
+
+| 环境变量 | 用途 |
+| --- | --- |
+| `ARGON_STATE_DIR` | 主题设置、留言和互动数据，默认为 `.argon-state/` |
+| `ARGON_PRIVATE_CONTENT_DIR` | 可选的私密内容与受保护媒体目录 |
+| `ARGON_SMTP_URL`、`ARGON_MAIL_FROM` | 可选的 SMTP 连接地址和发件地址 |
+
+配置 SMTP 后，在 Argon 设置中开启邮件回复通知。订阅者确认订阅后才会收到回复邮件。
+
+## 参与贡献
+
+提交问题时请附上 Node.js 版本、复现步骤和预期结果。提交拉取请求前，运行 `npm run build` 验证构建。
 
 ## 许可
 
-移植代码遵循 GPL-3.0，原主题与上游资源见 [solstice23/argon-theme](https://github.com/solstice23/argon-theme)。平滑滚动使用 Balazs Galambosi 的 [SmoothScroll](https://www.smoothscroll.net/)。页脚保留 Argon 名称和链接。
+本项目依据 [GPL-3.0](LICENSE) 发布。原主题由 [solstice23](https://github.com/solstice23/argon-theme) 开发，平滑滚动使用 Balazs Galambosi 的 [SmoothScroll](https://www.smoothscroll.net/)。请在页脚保留 Argon 的名称及其链接。
