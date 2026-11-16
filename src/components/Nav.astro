@@ -1,8 +1,9 @@
 ---
-import { canonicalPath, menus, safeLink, site, siteOptions } from '../lib/site';
+import { menus, safeLink, site, siteOptions } from '../lib/site';
+import { flattenMenu, hasMenuPage, menuTree } from '../lib/navigation';
+import MenuLink from './MenuLink.astro';
 
-const items = menus.toolbar_menu ?? [];
-const current = canonicalPath(Astro.url.pathname);
+const items = menuTree(menus.toolbar_menu ?? []);
 const option = siteOptions(Astro.locals.argonOverrides);
 const icon = option('toolbar_icon');
 ---
@@ -19,13 +20,21 @@ const icon = option('toolbar_icon');
         </div>
         <div class="navbar-collapse collapse" id="navbar_global">
           <ul class="navbar-nav navbar-nav-hover align-items-lg-center">
-            {items.map((item) => (
-              <li class="nav-item">
-                <a href={safeLink(item.url)} class="nav-link" target={item.target || undefined} aria-current={canonicalPath(item.url) === current ? 'page' : undefined}>
-                  <span class="nav-link-inner--text" set:html={item.title} />
-                </a>
-              </li>
-            ))}
+            {items.map((item) => <li class:list={['nav-item', { 'argon-menu-active': hasMenuPage(item, Astro.url) }]}>
+              {item.children.length ? <details class="argon-toolbar-menu">
+                <summary class="nav-link"><span set:html={item.title} /><i class="fa fa-angle-down" aria-hidden="true"></i></summary>
+                <div class="dropdown-menu">
+                  {item.url && item.url !== '#' && <MenuLink node={item} class="dropdown-item" />}
+                  {item.children.map((group) => group.children.length ? <details class="argon-toolbar-group" name={'toolbar-group-' + item.id} open={hasMenuPage(group, Astro.url)}>
+                    <summary class="dropdown-item"><span set:html={group.title} /><i class="fa fa-angle-down" aria-hidden="true"></i></summary>
+                    <div class="argon-toolbar-group-panel">
+                      {group.url && group.url !== '#' && <MenuLink node={group} class="dropdown-item" />}
+                      {flattenMenu(group.children).map((node) => <MenuLink node={node} class="dropdown-item" />)}
+                    </div>
+                  </details> : <MenuLink node={group} class="dropdown-item" />)}
+                </div>
+              </details> : <MenuLink node={item} class="nav-link" />}
+            </li>)}
           </ul>
           <ul class="navbar-nav align-items-lg-center ml-lg-auto">
             <li id="navbar_search_container" class="nav-item">

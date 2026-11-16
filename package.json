@@ -17,6 +17,7 @@
   "dependencies": {
     "@astrojs/node": "11.1.13",
     "astro": "7.4.12",
+    "entities": "8.1.0",
     "katex": "0.19.1",
     "marked": "16.4.2",
     "nodemailer": "10.5.0",

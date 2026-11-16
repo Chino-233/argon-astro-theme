@@ -24,13 +24,24 @@ interface Props {
   progress?: boolean;
   commentTarget?: string;
   bannerImage?: string;
+  socialImage?: string;
+  socialType?: 'article' | 'website';
 }
-const { title, description, entries, headings, list = false, home = false, owner = false, restricted = false, progress = false, commentTarget, bannerImage } = Astro.props;
+const { title, description, entries, headings, list = false, home = false, owner = false, restricted = false, progress = false, commentTarget, bannerImage, socialImage, socialType = 'website' } = Astro.props;
 const option = siteOptions(Astro.locals.argonOverrides);
 const onlyIfOn = (key: string) => option(key) === 'true';
 const assets = argonAssets(option);
 const pageTitle = title ? title + ' – ' + site.title : site.title + ' – ' + site.description;
 const canonical = new URL(Astro.url.pathname, site.url).href;
+const pageDescription = description || option('seo_description', site.description);
+let previewImage = '';
+try {
+  const source = socialImage || site.site_icon;
+  if (source) {
+    const url = new URL(source, site.url);
+    if (url.protocol === 'https:' || url.protocol === 'http:') previewImage = url.href;
+  }
+} catch { /* A malformed cover does not prevent the article from rendering. */ }
 const layout = option('page_layout', 'double');
 const bannerSize = option('banner_size', 'full');
 const cover = bannerSize === 'fullscreen';
@@ -88,9 +99,17 @@ const viewport = option('enable_mobile_scale', 'true') !== 'false' ? 'width=devi
     <meta charset="utf-8" />
     <meta name="viewport" content={viewport} />
     <title>{pageTitle}</title>
-    <meta name="description" content={description ?? option('seo_description', site.description)} />
+    <meta name="description" content={pageDescription} />
     {option('seo_keywords') && <meta name="keywords" content={option('seo_keywords')} />}
     {restricted ? <meta name="robots" content="noindex,nofollow" /> : <link rel="canonical" href={canonical} />}
+    {!restricted && <>
+      <meta property="og:site_name" content={site.title} />
+      <meta property="og:title" content={pageTitle} />
+      <meta property="og:description" content={pageDescription} />
+      <meta property="og:url" content={canonical} />
+      <meta property="og:type" content={socialType} />
+      {previewImage && <meta property="og:image" content={previewImage} />}
+    </>}
     {site.site_icon && <link rel="icon" href={site.site_icon} />}
     <link rel="alternate" type="application/rss+xml" title={site.title} href="/feed/" />
     <link rel="stylesheet" href={assets.asset('argon_css_merged.css')} />

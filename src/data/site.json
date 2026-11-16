@@ -33,7 +33,8 @@
     "argon_enable_comment_pinning": "true",
     "argon_enable_comment_upvote": "true",
     "argon_enable_pangu": "article|shuoshuo|comment",
-    "argon_show_customize_theme_color_picker": "true"
+    "argon_show_customize_theme_color_picker": "true",
+    "argon_search_filters_type": "*post,*page,shuoshuo,links"
   },
   "menus": {
     "toolbar_menu": [
@@ -46,8 +47,24 @@
         "classes": []
       },
       {
-        "id": 2,
+        "id": 6,
         "parent": 0,
+        "title": "浏览",
+        "url": "#",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 7,
+        "parent": 6,
+        "title": "内容",
+        "url": "#",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 2,
+        "parent": 7,
         "title": "<i class=\"fa fa-comment-o\" aria-hidden=\"true\"></i> 说说",
         "url": "/shuoshuo/",
         "target": "",
@@ -55,15 +72,23 @@
       },
       {
         "id": 3,
-        "parent": 0,
+        "parent": 7,
         "title": "<i class=\"fa fa-clock-o\" aria-hidden=\"true\"></i> 归档",
         "url": "/archive/",
         "target": "",
         "classes": []
       },
       {
+        "id": 8,
+        "parent": 6,
+        "title": "站点",
+        "url": "#",
+        "target": "",
+        "classes": []
+      },
+      {
         "id": 4,
-        "parent": 0,
+        "parent": 8,
         "title": "<i class=\"fa fa-info-circle\" aria-hidden=\"true\"></i> 关于",
         "url": "/about/",
         "target": "",
@@ -71,9 +96,17 @@
       },
       {
         "id": 5,
-        "parent": 0,
+        "parent": 8,
         "title": "留言板",
         "url": "/guestbook/",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 9,
+        "parent": 8,
+        "title": "友情链接",
+        "url": "/friends/",
         "target": "",
         "classes": []
       }
@@ -88,8 +121,24 @@
         "classes": []
       },
       {
-        "id": 2,
+        "id": 6,
         "parent": 0,
+        "title": "浏览",
+        "url": "#",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 7,
+        "parent": 6,
+        "title": "内容",
+        "url": "#",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 2,
+        "parent": 7,
         "title": "<i class=\"fa fa-comment-o\" aria-hidden=\"true\"></i> 说说",
         "url": "/shuoshuo/",
         "target": "",
@@ -97,15 +146,23 @@
       },
       {
         "id": 3,
-        "parent": 0,
+        "parent": 7,
         "title": "<i class=\"fa fa-clock-o\" aria-hidden=\"true\"></i> 归档",
         "url": "/archive/",
         "target": "",
         "classes": []
       },
       {
+        "id": 8,
+        "parent": 6,
+        "title": "站点",
+        "url": "#",
+        "target": "",
+        "classes": []
+      },
+      {
         "id": 4,
-        "parent": 0,
+        "parent": 8,
         "title": "<i class=\"fa fa-info-circle\" aria-hidden=\"true\"></i> 关于",
         "url": "/about/",
         "target": "",
@@ -113,9 +170,17 @@
       },
       {
         "id": 5,
-        "parent": 0,
+        "parent": 8,
         "title": "留言板",
         "url": "/guestbook/",
+        "target": "",
+        "classes": []
+      },
+      {
+        "id": 9,
+        "parent": 8,
+        "title": "友情链接",
+        "url": "/friends/",
         "target": "",
         "classes": []
       }
@@ -134,5 +199,22 @@
     ],
     "post_tag": []
   },
-  "customCss": ""
+  "customCss": "",
+  "searchTypes": {
+    "links": "友链"
+  },
+  "bookmarks": [
+    {
+      "name": "Argon",
+      "url": "https://github.com/solstice23/argon-theme",
+      "description": "Argon 的上游主题项目",
+      "group": "项目资源"
+    },
+    {
+      "name": "Astro",
+      "url": "https://docs.astro.build/",
+      "description": "Astro 官方文档",
+      "group": "项目资源"
+    }
+  ]
 }

@@ -1,0 +1,11 @@
+---
+import { menuPage } from '../lib/navigation';
+import { safeLink } from '../lib/site';
+import type { MenuNode } from '../lib/navigation';
+const { node, class: className } = Astro.props as { node: MenuNode; class?: string };
+---
+<a href={safeLink(node.url || '#')} class:list={[className, node.classes]} target={node.target || undefined}
+  rel={node.target === '_blank' ? 'noopener noreferrer' : undefined}
+  title={node.description || undefined} aria-current={menuPage(node.url, Astro.url) ? 'page' : undefined}>
+  {className === 'nav-link' ? <span class="nav-link-inner--text" set:html={node.title} /> : <Fragment set:html={node.title} />}
+</a>

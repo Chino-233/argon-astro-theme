@@ -388,6 +388,9 @@ function openImage(img: HTMLImageElement) {
 document.addEventListener('click', (event) => {
   if (!(event.target instanceof Element)) return;
   const target = event.target;
+  for (const menu of document.querySelectorAll<HTMLDetailsElement>('.argon-toolbar-menu[open]')) {
+    if (!menu.contains(target)) menu.open = false;
+  }
   const desktopSearch = target.closest<HTMLButtonElement>('[data-desktop-search]');
   if (desktopSearch) {
     const form = desktopSearch.form;
@@ -487,7 +490,14 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') drawer(false);
+  if (event.key === 'Escape') {
+    drawer(false);
+    const menu = document.activeElement?.closest<HTMLDetailsElement>('.argon-toolbar-menu[open]');
+    if (menu) {
+      menu.open = false;
+      menu.querySelector('summary')?.focus();
+    }
+  }
   if ((event.key === 'Enter' || event.key === ' ') && event.target instanceof HTMLImageElement && event.target.classList.contains('astro-zoom')) {
     event.preventDefault();
     openImage(event.target);

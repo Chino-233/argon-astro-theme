@@ -1,0 +1,32 @@
+---
+import { bookmarks, safeLink } from '../lib/site';
+import type { Entry } from '../lib/types';
+const { style = 'cards' } = Astro.props as { style?: Entry['linkStyle'] };
+const classes = {
+  cards: 'friend-links-style1',
+  square: 'friend-links-style1 friend-links-style1-square',
+  compact: 'friend-links-style2',
+  large: 'friend-links-style2 friend-links-style2-big',
+};
+const sections = new Map<string, typeof bookmarks>();
+for (const link of bookmarks) {
+  const group = link.group ?? '';
+  const items = sections.get(group) ?? [];
+  items.push(link);
+  sections.set(group, items);
+}
+---
+{[...sections].map(([group, links]) => <section>
+  {group && <h2>{group}</h2>}
+  <div class:list={['friend-links astro-friends', classes[style]]}><div class="row">
+    {links.map((link) => <div class="col-12 col-sm-6">
+      <a class="friend-link-item" href={safeLink(link.url)} target="_blank" rel="noopener noreferrer">
+        {link.image && <img class="friend-link-avatar" src={safeLink(link.image)} alt="" loading="lazy" />}
+        <div class="friend-link-info">
+          <div class="friend-link-name">{link.name}</div>
+          {link.description && <div class="friend-link-description">{link.description}</div>}
+        </div>
+      </a>
+    </div>)}
+  </div></div>
+</section>)}

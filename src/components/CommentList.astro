@@ -1,5 +1,6 @@
 ---
-import { siteOptions, safeLink, stamp, stripTags } from '../lib/site';
+import { site, siteOptions, safeLink, stamp, stripTags } from '../lib/site';
+import { guestbookLabels } from '../lib/guestbook-labels';
 import { commentPins, ownsComment, type Interactions } from '../lib/interactions';
 import type { Comment, Entry } from '../lib/types';
 interface Props { items: Comment[]; entry: Entry; guestbook?: boolean; reply?: boolean; interactions: Interactions; visitor?: string; owner?: boolean }
@@ -37,7 +38,7 @@ items.forEach((item) => append(item, 0));
 <section id="comments" class:list={['comments-area card shadow-sm border-0', { 'comment-avatar-vertical-center': enabled('comment_avatar_vcenter') }]}
   data-comment-pagination={list.length > pageSize ? option('comment_pagination_type', 'feed') : undefined} data-comment-page-size={pageSize}>
   <div class="card-body">
-  <h2 class="comments-title"><i class="fa fa-comments-o" aria-hidden="true"></i> {guestbook ? '留言板' : '评论'}{!guestbook && items.length > 0 ? ' · ' + items.length : ''}</h2>
+  <h2 class="comments-title"><i class="fa fa-comments-o" aria-hidden="true"></i> {guestbook ? guestbookLabels(site.language).board : '评论'}{!guestbook && items.length > 0 ? ' · ' + items.length : ''}</h2>
   <ol class="comment-list astro-comment-list">
     {list.map(({ item, depth }) => {
       const date = stamp(item.date);

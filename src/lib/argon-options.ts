@@ -282,7 +282,7 @@ export function validateOptions(raw: Record<string, unknown>) {
       const numberValue = Number(value);
       const metadata = value.split('|').filter(Boolean);
       const validSearchTypes = item.key !== 'search_filters_type' ||
-        /^\*?(post|page|shuoshuo)(\s*,\s*\*?(post|page|shuoshuo)){0,2}$/.test(value);
+        /^\*?[a-z][a-z0-9_-]{0,31}(\s*,\s*\*?[a-z][a-z0-9_-]{0,31}){0,19}$/.test(value);
       const validExcludedCategories = item.key !== 'hide_categories' || !value || /^\d+(\s*,\s*\d+)*$/.test(value);
       const validEasing = item.key !== 'zoomify_easing' || /^(linear|ease(?:-in|-out|-in-out)?|cubic-bezier\([\d.,\s-]+\))$/.test(value);
       const valid = value.length <= (item.type === 'html' || item.type === 'css' ? 16384 : 2048) && (

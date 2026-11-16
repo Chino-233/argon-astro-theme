@@ -2,6 +2,8 @@
 
 Argon WordPress 主题的 Astro 移植版。沿用 Argon 1.3.5 的 CSS、图标和页面结构，包含双栏博客、文章目录、说说、归档、搜索、主题切换及阅读进度。
 
+上游基线为 [v1.3.5](https://github.com/solstice23/argon-theme/releases/tag/v1.3.5)，并跟进 [`master` 至 `aaef37c77`](https://github.com/solstice23/argon-theme/compare/v1.3.5...aaef37c77) 的顶栏三级菜单、链接分享预览、留言板标题翻译和特殊字符搜索。主题运行在 Astro，WordPress 的后台插件、Gutenberg 区块和 PHP 短代码需各自适配。
+
 ## 本地运行
 
 需要 Node.js 22.23.4 或更新版本。
@@ -18,6 +20,8 @@ npm run dev
 - 在 `src/data/site.json` 设置站点域名、标题、语言、主题色、Banner、背景、分类和菜单。
 - 在 `src/content/posts/` 添加 Markdown 文章或页面。已有示例演示了 `title`、`date` 和 `path` 的写法。每篇文章的 `path` 应唯一。
 - `src/data/posts.json` 可保存已渲染的 HTML 条目，包括首页混排的说说。
+- `src/data/site.json` 中的两套菜单通过 `id` 和 `parent` 表示层级。父级可用 `url: "#"` 作为纯分组，示例顶栏的「浏览」包含两个可折叠分组。
+- Markdown 页面可用 `template: friendlinks` 和 `linkStyle: cards|square|compact|large` 展示 `bookmarks` 中的友链。为条目指定 `searchType`，可在 `searchTypes` 配置显示名称，再用后台「搜索类型」决定显示顺序和默认勾选状态。
 - `src/data/comments.json` 支持展示已导入的历史评论。新留言和修改在 `/auth/comments/` 审核，留言、点赞和置顶保存在 `ARGON_STATE_DIR`。访客可用发送留言时的浏览器编辑留言和查看自己的悄悄话。
 
 可选的站主登录位于 `/auth/`。用 `npm run admin:setup` 设置站主密码。若使用受限内容，另准备仓库外的运行目录并以 `npm run admin:setup -- --private-dir <路径>` 配置。受限目录中的 `entries.json` 使用 `{ "posts": [], "comments": [] }` 结构，文件放在 `uploads/`。条目的 `visibility` 可为 `private` 或 `password`，服务端会校验条目及其授权媒体。用于生产时，通过 HTTPS 访问。

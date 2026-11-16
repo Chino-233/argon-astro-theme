@@ -1,6 +1,7 @@
 ---
 import type { Entry } from '../lib/types';
-import { siteOptions } from '../lib/site';
+import { site, siteOptions } from '../lib/site';
+import { guestbookLabels } from '../lib/guestbook-labels';
 import { issueCaptcha } from '../lib/comment-captcha';
 import { commentMailConfigured } from '../lib/comment-mail';
 import emotions from '../lib/comment-emotions.json';
@@ -19,7 +20,7 @@ const message = result === 'pending' ? '已提交，站主审核通过后会显�
 ---
 <section id="post_comment" class="card shadow-sm border-0">
   <div class="card-body">
-    <h2 class="post-comment-title"><i class="fa fa-commenting" aria-hidden="true"></i> {guestbook ? '发送留言' : '发送评论'}</h2>
+    <h2 class="post-comment-title"><i class="fa fa-commenting" aria-hidden="true"></i> {guestbook ? guestbookLabels(site.language).send : '发送评论'}</h2>
     {message && <p class:list={['alert', result === 'pending' ? 'alert-success' : 'alert-warning']} role="status">{message}</p>}
     <div class="post-comment-reply astro-reply-info" data-comment-reply-info hidden>
       正在回复 <strong data-comment-reply-name></strong>

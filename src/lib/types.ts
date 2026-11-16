@@ -8,6 +8,8 @@ export interface Entry {
   updated?: string;
   author?: string;
   template?: string;
+  searchType?: string;
+  linkStyle?: 'cards' | 'square' | 'compact' | 'large';
   html: string;
   excerpt: string;
   featuredImage?: string;
@@ -51,6 +53,15 @@ export interface MenuItem {
   url: string;
   target: string;
   classes: string[];
+  description?: string;
+}
+
+export interface Bookmark {
+  name: string;
+  url: string;
+  description?: string;
+  image?: string;
+  group?: string;
 }
 
 export interface Term {

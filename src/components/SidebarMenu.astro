@@ -1,0 +1,15 @@
+---
+import SidebarMenu from './SidebarMenu.astro';
+import MenuLink from './MenuLink.astro';
+import { hasMenuPage, menuPage, type MenuNode } from '../lib/navigation';
+const { nodes, root = false } = Astro.props as { nodes: MenuNode[]; root?: boolean };
+---
+<ul id={root ? 'leftbar_part1_menu' : undefined} class={root ? 'leftbar-menu' : 'argon-sidebar-children'}>
+  {nodes.map((node) => <li class:list={['leftbar-menu-item', { current: menuPage(node.url, Astro.url) }]}>
+    {node.children.length ? <details class="argon-sidebar-group" open={hasMenuPage(node, Astro.url)}>
+      <summary><span set:html={node.title} /><i class="fa fa-angle-down" aria-hidden="true"></i></summary>
+      {node.url && node.url !== '#' && <MenuLink node={node} class="argon-sidebar-parent-link" />}
+      <SidebarMenu nodes={node.children} />
+    </details> : <MenuLink node={node} />}
+  </li>)}
+</ul>

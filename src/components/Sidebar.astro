@@ -1,5 +1,7 @@
 ---
-import { canonicalPath, menus, siteOptions, safeLink, terms } from '../lib/site';
+import { menus, siteOptions, safeLink, terms } from '../lib/site';
+import { menuTree } from '../lib/navigation';
+import SidebarMenu from './SidebarMenu.astro';
 import TocList, { type HeadingNode } from './TocList.astro';
 import type { Entry, Heading } from '../lib/types';
 
@@ -8,8 +10,7 @@ interface Props {
   headings?: Heading[];
 }
 const { entries, headings = [] } = Astro.props;
-const current = canonicalPath(Astro.url.pathname);
-const items = menus.leftbar_menu ?? [];
+const items = menuTree(menus.leftbar_menu?.length ? menus.leftbar_menu : menus.toolbar_menu ?? []);
 const count = entries.filter((entry) => entry.type === 'post').length;
 const option = siteOptions(Astro.locals.argonOverrides);
 const archive = safeLink(option('archives_timeline_url', entries.find((entry) => entry.template === 'timeline.php')?.path ?? '/archive/'));
@@ -42,13 +43,7 @@ const panels = [...(outline.length ? [['catalog', '文章目录']] : []), ['over
       <span class="leftbar-banner-title text-white">{option('sidebar_banner_title')}</span>
       <span class="leftbar-banner-subtitle text-white">{option('sidebar_banner_subtitle')}</span>
     </div>
-    <ul id="leftbar_part1_menu" class="leftbar-menu">
-      {items.map((item) => (
-        <li class:list={['leftbar-menu-item', { current: canonicalPath(item.url) === current }]}>
-          <a href={safeLink(item.url)} target={item.target || undefined} set:html={item.title} />
-        </li>
-      ))}
-    </ul>
+    <SidebarMenu nodes={items} root />
     <div class="card-body text-center leftbar-search-button">
       <button id="leftbar_search_container" type="button" class="btn btn-secondary btn-lg active btn-sm btn-block border-0" data-open-dialog="argon_search_modal">
         <i class="menu-item-icon fa fa-search mr-0" aria-hidden="true"></i> 搜索

@@ -10,12 +10,13 @@ import Pagination from '../components/Pagination.astro';
 import Timeline from '../components/Timeline.astro';
 import ShareLinks from '../components/ShareLinks.astro';
 import OutdatedNotice from '../components/OutdatedNotice.astro';
+import FriendLinks from '../components/FriendLinks.astro';
 import { customHtml } from '../lib/argon-options';
 import { firstImage, relatedArticles } from '../lib/argon-features';
 import { canRead, isOwner, preventCaching } from '../lib/auth';
 import { findRestricted, restrictedData } from '../lib/private-store';
 import { allowsComments, commentVisitor, loadInteractions, ownsComment, publicComments } from '../lib/interactions';
-import { canonicalPath, comments, getEntries, headings, ordered, site, siteOptions, stamp, stripTags, terms } from '../lib/site';
+import { canonicalPath, comments, getEntries, headings, ordered, searchTypes, site, siteOptions, stamp, stripTags, terms } from '../lib/site';
 import type { Entry } from '../lib/types';
 
 const entries = await getEntries();
@@ -43,10 +44,14 @@ const term = [...terms.category, ...terms.post_tag].find((item) => canonicalPath
 const archive = baseRoute.match(/^\/(\d{4})(?:\/(\d{2})(?:\/(\d{2}))?)?\/$/);
 const searchPage = baseRoute === '/' && search.has('s');
 const query = search.get('s')?.trim().slice(0, 200) ?? '';
-const supported = ['post', 'page', 'shuoshuo'] as const;
-const typeLabels = { post: '文章', page: '页面', shuoshuo: '说说' };
+const typeLabels = new Map<string, string>([['post', '文章'], ['page', '页面'], ['shuoshuo', '说说'], ...Object.entries(searchTypes)]);
+for (const item of entries) if (item.searchType && !typeLabels.has(item.searchType)) typeLabels.set(item.searchType, item.searchType);
+const supported = [...typeLabels.keys()];
 const filterConfig = option('search_filters_type', '*post,*page,shuoshuo').split(',').map((value) => value.trim());
-const availableTypes = supported.filter((type) => filterConfig.includes(type) || filterConfig.includes('*' + type));
+const availableTypes = [...new Set(filterConfig.flatMap((value) => {
+  const type = supported.find((candidate) => value === candidate || value === '*' + candidate);
+  return type ? [type] : [];
+}))];
 const defaultTypes = availableTypes.filter((type) => filterConfig.includes('*' + type));
 const searchFilters = option('enable_search_filters', 'true') === 'true' && availableTypes.length > 0;
 const chosen = search.get('post_type')?.split(',') ?? search.getAll('type');
@@ -65,8 +70,8 @@ const guestbook = entry?.template === 'msgboard.php';
 if (talkPage || entry?.type === 'shuoshuo') Astro.response.headers.set('Vary', 'Cookie');
 const list = !entry && (home || Boolean(term || archive || searchPage));
 const matching = list ? (
-  searchPage ? entries.filter((item) => types.includes(item.type) && query && query.toLocaleLowerCase().split(/\s+/).every((word) =>
-    (item.title + ' ' + stripTags(item.html)).toLocaleLowerCase().includes(word)))
+  searchPage ? entries.filter((item) => types.includes(item.searchType ?? item.type) && query && query.toLocaleLowerCase().split(/\s+/).every((word) =>
+    (item.title + ' ' + stripTags(item.html)).normalize('NFC').toLocaleLowerCase().includes(word.normalize('NFC'))))
   : term ? entries.filter((item) => (item.categories?.includes(term.id) || item.tags?.includes(term.id)))
   : archive ? articles.filter((item) => {
       const date = stamp(item.published);
@@ -118,6 +123,7 @@ const bannerImage = entry && !passwordPage && option('show_thumbnail_in_banner_i
 <Layout title={title} entries={entries} owner={owner} restricted={Boolean(privateEntry) || !found}
   home={home && found} list={list && found} progress={Boolean(entry && entry.type !== 'shuoshuo' && !passwordPage && !talkPage && !timeline && !guestbook)}
   commentTarget={canComment ? '#post_comment' : visibleComments.length ? '#comments' : undefined}
+  socialImage={entry && !entry.visibility ? firstImage(entry, option) : undefined} socialType={isArticle ? 'article' : 'website'}
   headings={guestbook || entry?.type === 'shuoshuo' ? [] : article.links} bannerImage={bannerImage} description={entry && !privateEntry ? stripTags(entry.excerpt) : undefined}>
   <div slot="information" class="page-information-card-container">
     {found && (talkPage || (list && !home)) && <div class="page-information-card card bg-gradient-secondary shadow-lg border-0"><div class="card-body">
@@ -127,7 +133,7 @@ const bannerImage = entry && !passwordPage && option('show_thumbnail_in_banner_i
       {!talkPage && !searchPage && <p class="text-black mt-3 mb-0 opacity-8">{matching.length} 篇文章</p>}
       {searchPage && searchFilters && <form action="/" method="get" data-astro-reload class="argon-search-filters">
         <input type="hidden" name="s" value={query} />
-        {availableTypes.map((type) => <label><input name="type" value={type} type="checkbox" checked={types.includes(type)} /> {typeLabels[type]}</label>)}
+        {availableTypes.map((type) => <label><input name="type" value={type} type="checkbox" checked={types.includes(type)} /> {typeLabels.get(type)}</label>)}
         <button class="btn btn-sm btn-outline-primary" type="submit">筛选</button>
       </form>}
     </div></div>}
@@ -153,6 +159,7 @@ const bannerImage = entry && !passwordPage && option('show_thumbnail_in_banner_i
       <div class="post-content" id="post_content" data-article>
         {isArticle && <OutdatedNotice entry={entry} />}
         {Content ? <Content /> : <Fragment set:html={article.html} />}
+        {entry.template === 'friendlinks' && <FriendLinks style={entry.linkStyle} />}
         {afterPost && <div class="astro-after-post" set:html={afterPost} />}
       </div>
       {isArticle && <div class="astro-article-footer">

@@ -1,8 +1,9 @@
 import { getCollection } from 'astro:content';
+import { decodeHTML } from 'entities';
 import data from '../data/site.json';
 import imported from '../data/posts.json';
 import history from '../data/comments.json';
-import type { Comment, Entry, Heading, MenuItem, Term } from './types';
+import type { Bookmark, Comment, Entry, Heading, MenuItem, Term } from './types';
 import { option as selectOption } from './argon-options';
 
 export const site = data.site as typeof data.site & { started_at?: string };
@@ -11,6 +12,9 @@ export const menus = data.menus as Record<string, MenuItem[]>;
 export const terms = data.terms as Record<'category' | 'post_tag', Term[]>;
 export const customCss = data.customCss;
 export const comments = history as Comment[];
+const contentSettings = data as typeof data & { bookmarks?: Bookmark[]; searchTypes?: Record<string, string> };
+export const bookmarks = contentSettings.bookmarks ?? [];
+export const searchTypes = contentSettings.searchTypes ?? {};
 
 export function siteOptions(overrides: Record<string, string>) {
   return (name: string, fallback = '') => selectOption(overrides, theme, name, fallback);
@@ -25,10 +29,11 @@ export function canonicalPath(path: string) {
 }
 
 export function stripTags(markup: string) {
-  return markup.replace(/<[^>]*>/g, ' ').replace(/&(?:nbsp|hellip);/g, ' ').replace(/\s+/g, ' ').trim();
+  return decodeHTML(markup.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
 }
 
 export function safeLink(value: string) {
+  if (/[\\\u0000-\u001f]/u.test(value)) return '#';
   if (/^\/(?!\/)/.test(value) || /^https?:\/\//i.test(value) || value.startsWith('#')) return value;
   return '#';
 }
@@ -50,6 +55,7 @@ export async function getEntries() {
   const markdown = await getCollection('posts');
   const posts: Entry[] = markdown.map(({ id, data, body }) => ({
     id, type: data.type, title: data.title, path: data.path,
+    searchType: data.searchType, template: data.template, linkStyle: data.linkStyle,
     published: data.date.toISOString(), updated: data.updated?.toISOString(),
     excerpt: data.excerpt ?? '', featuredImage: data.featuredImage ?? '',
     categories: data.categories, tags: data.tags, html: body ?? '',
