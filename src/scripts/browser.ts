@@ -505,10 +505,40 @@ document.addEventListener('keydown', (event) => {
 });
 document.addEventListener('change', (event) => {
   const target = event.target;
+  if (target instanceof HTMLInputElement && target.type === 'checkbox' && target.form?.hasAttribute('data-search-filters')) {
+    target.form.requestSubmit();
+  }
   if ((target instanceof HTMLInputElement || target instanceof HTMLSelectElement) && target.hasAttribute('data-pref')) {
     savePreference(target.name as keyof Preferences, target.value);
   }
 });
+let trackedPage: HTMLElement | undefined;
+
+function trackPageView() {
+  const page = document.body;
+  if (page.dataset.argonTrack !== 'true' || trackedPage === page || !crypto.randomUUID) return;
+  trackedPage = page;
+  let visitor = '';
+  try {
+    visitor = localStorage.getItem('argon-visitor-id') ?? crypto.randomUUID();
+    localStorage.setItem('argon-visitor-id', visitor);
+  } catch { /* Browsers can disable local storage. */ }
+  const body = new URLSearchParams({ event: crypto.randomUUID(), path: location.pathname, visitor });
+  void fetch('/traffic/', { method: 'POST', body, keepalive: true }).then(async (response) => {
+    if (!response.ok || response.status === 204) return;
+    const totals = await response.json();
+    if (document.body !== page) return;
+    const views = page.querySelector('[data-argon-total-views]');
+    const visitors = page.querySelector('[data-argon-total-visitors]');
+    const article = page.querySelector<HTMLElement>('article.post-full [data-argon-article-base]');
+    if (views) views.textContent = Number(totals.views).toLocaleString('zh-CN');
+    if (visitors) visitors.textContent = Number(totals.visitors).toLocaleString('zh-CN');
+    if (article && typeof totals.article === 'number') {
+      article.textContent = (Number(article.dataset.argonArticleBase) + totals.article).toLocaleString('en-US');
+    }
+  }).catch(() => {});
+}
+
 document.addEventListener('astro:before-preparation', () => {
   if (!document.documentElement.classList.contains('no-navigation-animation')) document.documentElement.classList.add('argon-loading');
 });
@@ -516,6 +546,7 @@ document.addEventListener('astro:after-swap', applyPreferences);
 document.addEventListener('astro:page-load', () => {
   document.documentElement.classList.remove('argon-loading');
   initPage();
+  trackPageView();
 });
 window.addEventListener('scroll', queueScroll, { passive: true });
 window.addEventListener('resize', queueScroll);
@@ -524,6 +555,12 @@ system.addEventListener('change', applyPreferences);
 window.setInterval(updateClocks, 1000);
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    if (!document.querySelector('meta[name="astro-view-transitions-enabled"]')) initPage();
+    if (!document.querySelector('meta[name="astro-view-transitions-enabled"]')) {
+      initPage();
+      trackPageView();
+    }
   }, { once: true });
-} else if (!document.querySelector('meta[name="astro-view-transitions-enabled"]')) initPage();
+} else if (!document.querySelector('meta[name="astro-view-transitions-enabled"]')) {
+  initPage();
+  trackPageView();
+}

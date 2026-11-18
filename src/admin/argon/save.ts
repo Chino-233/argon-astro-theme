@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
-import { isOwner, preventCaching } from '../../../lib/auth';
-import { optionGroups, validateOptions } from '../../../lib/argon-options';
-import { saveOverrides } from '../../../lib/argon-state';
-import { customCss, site, siteOptions } from '../../../lib/site';
+import { isOwner, preventCaching } from '../../lib/auth';
+import { optionGroups, validateOptions } from '../../lib/argon-options';
+import { saveOverrides } from '../../lib/argon-state';
+import { customCss, site, siteOptions } from '../../lib/site';
 
 export const POST: APIRoute = async ({ cookies, locals, request, url }) => {
   const headers = new Headers();

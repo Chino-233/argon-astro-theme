@@ -1,0 +1,21 @@
+:root {
+  --wp--preset--color--black: #1d2327;
+  --wp--preset--color--white: #fff;
+  --wp--preset--color--primary: #2271b1;
+  --wp--preset--color--red: #cf2e2e;
+  --wp--preset--color--gray: #646970;
+  --wp--preset--font-size--small: 13px;
+  --wp--preset--font-size--medium: 20px;
+  --wp--preset--font-size--large: 36px;
+  --wp--preset--font-size--x-large: 42px;
+}
+.has-black-color { color: var(--wp--preset--color--black); }
+.has-white-color { color: var(--wp--preset--color--white); }
+.has-primary-color { color: var(--wp--preset--color--primary); }
+.has-red-color { color: var(--wp--preset--color--red); }
+.has-gray-color { color: var(--wp--preset--color--gray); }
+.has-black-background-color { background-color: var(--wp--preset--color--black); }
+.has-white-background-color { background-color: var(--wp--preset--color--white); }
+.has-primary-background-color { background-color: var(--wp--preset--color--primary); }
+.has-red-background-color { background-color: var(--wp--preset--color--red); }
+.has-gray-background-color { background-color: var(--wp--preset--color--gray); }

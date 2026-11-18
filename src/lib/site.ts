@@ -1,8 +1,9 @@
 import { getCollection } from 'astro:content';
 import { decodeHTML } from 'entities';
-import data from '../data/site.json';
-import imported from '../data/posts.json';
-import history from '../data/comments.json';
+import data from 'argon:site-data';
+import imported from 'argon:posts';
+import history from 'argon:comments';
+import { publishedChanges } from 'argon:content-overrides';
 import type { Bookmark, Comment, Entry, Heading, MenuItem, Term } from './types';
 import { option as selectOption } from './argon-options';
 
@@ -51,16 +52,23 @@ export function ordered(entries: Entry[]) {
   return [...entries].sort((a, b) => Date.parse(b.published) - Date.parse(a.published));
 }
 
-export async function getEntries() {
+export async function originalEntries() {
   const markdown = await getCollection('posts');
   const posts: Entry[] = markdown.map(({ id, data, body }) => ({
     id, type: data.type, title: data.title, path: data.path,
     searchType: data.searchType, template: data.template, linkStyle: data.linkStyle,
     published: data.date.toISOString(), updated: data.updated?.toISOString(),
     excerpt: data.excerpt ?? '', featuredImage: data.featuredImage ?? '',
-    categories: data.categories, tags: data.tags, html: body ?? '',
+    categories: data.categories, tags: data.tags, html: body ?? '', sourceFormat: 'markdown',
   }));
-  const entries = ordered([...(imported as Entry[]), ...posts]);
+  return ordered([...(imported as Entry[]), ...posts]);
+}
+
+export async function getEntries() {
+  const edits = await publishedChanges();
+  const original = (await originalEntries()).filter((entry) => !edits.has(String(entry.id)));
+  const published = [...edits.values()].filter((entry): entry is Entry => !!entry && !entry.visibility);
+  const entries = ordered([...original, ...published]);
   if (new Set(entries.map((entry) => canonicalPath(entry.path))).size !== entries.length) {
     throw new Error('Two published entries have the same URL.');
   }

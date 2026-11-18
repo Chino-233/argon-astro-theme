@@ -1,12 +1,33 @@
 {
   "name": "argon-astro-theme",
-  "version": "1.0.0",
-  "private": true,
+  "version": "1.1.0",
   "type": "module",
   "license": "GPL-3.0-only",
   "engines": {
     "node": ">=22.23.4"
   },
+  "exports": {
+    ".": "./integration.mjs",
+    "./admin": "./src/admin/integration.mjs",
+    "./collections": "./src/collections.ts",
+    "./components/*": "./src/components/*",
+    "./layouts/*": "./src/layouts/*",
+    "./runtime/*": "./src/lib/*.ts"
+  },
+  "files": [
+    "integration.mjs",
+    "src/admin",
+    "src/argon.d.ts",
+    "src/collections.ts",
+    "src/components",
+    "src/layouts",
+    "src/lib",
+    "src/routes",
+    "src/scripts",
+    "src/site-middleware.ts",
+    "src/styles",
+    "public/assets/argon"
+  ],
   "scripts": {
     "dev": "node --env-file-if-exists=.env node_modules/astro/bin/astro.mjs dev",
     "build": "astro build",
@@ -15,21 +36,25 @@
     "admin:setup": "node scripts/setup-admin.mjs"
   },
   "dependencies": {
-    "@astrojs/node": "11.1.13",
-    "astro": "7.4.12",
     "entities": "8.1.0",
     "katex": "0.19.1",
     "marked": "16.4.2",
     "nodemailer": "10.5.0",
     "qrcode": "1.5.4",
-    "sanitize-html": "2.18.2"
+    "sanitize-html": "2.18.2",
+    "send": "1.2.1"
+  },
+  "peerDependencies": {
+    "astro": "^7.4.0"
   },
   "overrides": {
     "unifont": "0.7.4"
   },
   "devDependencies": {
+    "@astrojs/node": "11.1.13",
     "@types/nodemailer": "7.0.12",
     "@types/qrcode": "1.5.6",
-    "@types/sanitize-html": "^2.16.0"
+    "@types/sanitize-html": "^2.16.0",
+    "astro": "7.4.12"
   }
 }

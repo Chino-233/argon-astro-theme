@@ -22,6 +22,36 @@ npm run dev
 
 浏览器访问 [http://localhost:4321/](http://localhost:4321/)。
 
+## 集成到 Astro 项目
+
+主题通过 Astro Integration 提供公开路由、渲染组件、样式和互动接口。内容、站点配置和持久化目录由宿主项目管理。在主题仓库中运行 `npm pack` 生成安装包，然后在宿主项目中运行 `npm install /path/to/argon-astro-theme-1.1.0.tgz`。
+
+在 `astro.config.mjs` 中启用主题和 Node.js 适配器。
+
+```js
+import { defineConfig } from 'astro/config';
+import node from '@astrojs/node';
+import argonTheme from 'argon-astro-theme';
+
+export default defineConfig({
+  output: 'server',
+  adapter: node({ mode: 'standalone' }),
+  integrations: [argonTheme()],
+  trailingSlash: 'ignore',
+  markdown: { syntaxHighlight: false },
+});
+```
+
+在 `src/content.config.ts` 中注册 Markdown 内容集合。
+
+```ts
+import { argonPosts } from 'argon-astro-theme/collections';
+
+export const collections = { posts: argonPosts() };
+```
+
+将示例 [`site.json`](src/data/site.json)、[`posts.json`](src/data/posts.json) 和 [`comments.json`](src/data/comments.json) 复制到宿主的 `src/data/`，并按需替换数据。仅使用 Markdown 时，`posts.json` 和 `comments.json` 可初始化为 `[]`。可以用 `argonTheme({ dataDir: './其他目录' })` 指定配置文件所在目录。
+
 ## 配置站点
 
 | 文件或目录 | 用途 |
@@ -52,6 +82,8 @@ path: /posts/hello/
 
 ### 管理后台
 
+示例站点附带可选的通用站主管理。设置 `ARGON_ENABLE_ADMIN=false` 后启动开发服务或重新构建，可以只运行博客前端与公开互动。宿主项目可从 `argon-astro-theme/admin` 导入 `argonAdmin`，并在 Astro 的 `integrations` 中添加 `argonAdmin()`。
+
 在交互式终端中运行 `npm run admin:setup`，按提示设置站主密码。命令会创建包含密码哈希和会话密钥的 `.env`。启动或重启服务后，访问 `/auth/` 登录。
 
 | 路径 | 用途 |
@@ -73,6 +105,7 @@ npm start
 | 环境变量 | 用途 |
 | --- | --- |
 | `ARGON_STATE_DIR` | 主题设置、留言和互动数据，默认为 `.argon-state/` |
+| `ARGON_COUNTER=true` | 启用站点访问统计与文章浏览量，数据写入状态目录 |
 | `ARGON_PRIVATE_CONTENT_DIR` | 可选的私密内容与受保护媒体目录 |
 | `ARGON_SMTP_URL`、`ARGON_MAIL_FROM` | 可选的 SMTP 连接地址和发件地址 |
 

@@ -6,6 +6,7 @@ import Footer from '../components/Footer.astro';
 import ThemeControls from '../components/ThemeControls.astro';
 import { customCss, siteOptions, site } from '../lib/site';
 import { colorPalette } from '../lib/color';
+import { counterEnabled } from '../lib/counter';
 import { customHtml } from '../lib/argon-options';
 import { argonAssets, bannerBackground } from '../lib/argon-features';
 import codeThemes from '../lib/code-themes.json';
@@ -77,7 +78,7 @@ const viewport = option('enable_mobile_scale', 'true') !== 'false' ? 'width=devi
 <!doctype html>
 <html lang={site.language} class:list={[
   option('article_header_style', 'article-header-style-2'),
-  { 'banner-as-cover': cover, 'banner-mini': bannerSize === 'mini', 'no-banner': bannerSize === 'hide',
+  { 'is-home': home, 'banner-as-cover': cover, 'banner-mini': bannerSize === 'mini', 'no-banner': bannerSize === 'hide',
     'toolbar-blur': option('toolbar_blur') === 'true', 'toolbar-mask': option('show_toolbar_mask') === 'true',
     'navbar-absolute': headroom === 'absolute', 'immersion-color': option('enable_immersion_color') === 'true',
     'no-navigation-animation': option('disable_pjax_animation') === 'true',
@@ -114,6 +115,8 @@ const viewport = option('enable_mobile_scale', 'true') !== 'false' ? 'width=devi
     <link rel="alternate" type="application/rss+xml" title={site.title} href="/feed/" />
     <link rel="stylesheet" href={assets.asset('argon_css_merged.css')} />
     <link rel="stylesheet" href={assets.stylesheet} />
+    <link rel="stylesheet" href="/assets/argon/vendor/wordpress/wp-includes/css/dist/block-library/style.min.css" />
+    <link rel="stylesheet" href="/assets/argon/block-content.css" />
     {option('disable_googlefont', 'true') !== 'true' && <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700%7CNoto+Serif+SC:300,600&display=swap" />}
     {option('enable_code_highlight') === 'true' && <link rel="stylesheet" href={assets.asset('vendor/highlight/styles/' + codeTheme + '.css')} />}
     {smoothScripts[smooth] && <script is:inline src={assets.asset('vendor/smoothscroll/' + smoothScripts[smooth])} defer></script>}
@@ -133,7 +136,7 @@ const viewport = option('enable_mobile_scale', 'true') !== 'false' ? 'width=devi
       } catch {}
     </script>
   </head>
-  <body class:list={[{ home, blog: home }, 'argon-astro']}>
+  <body class:list={[{ home, blog: home }, 'argon-astro']} data-argon-track={counterEnabled() && !owner && !restricted ? 'true' : undefined}>
     <Nav />
     <section id="banner" class="banner section section-lg section-shaped">
       <div class:list={['shape', option('banner_background_color_type', 'shape-primary'), { 'shape-style-1': option('banner_background_hide_shapes') !== 'true' }]} aria-hidden="true">

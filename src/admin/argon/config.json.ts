@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { isOwner, preventCaching } from '../../../lib/auth';
-import { optionGroups } from '../../../lib/argon-options';
-import { customCss, siteOptions } from '../../../lib/site';
+import { isOwner, preventCaching } from '../../lib/auth';
+import { optionGroups } from '../../lib/argon-options';
+import { customCss, siteOptions } from '../../lib/site';
 
 export const GET: APIRoute = ({ cookies, locals }) => {
   const headers = new Headers();

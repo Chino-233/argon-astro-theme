@@ -11,6 +11,7 @@ export interface Entry {
   searchType?: string;
   linkStyle?: 'cards' | 'square' | 'compact' | 'large';
   html: string;
+  sourceFormat?: 'markdown' | 'html';
   excerpt: string;
   featuredImage?: string;
   categories?: number[];

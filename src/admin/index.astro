@@ -1,8 +1,8 @@
 ---
-import Layout from '../../layouts/ArgonLayout.astro';
-import { authConfigured, isOwner, preventCaching, returnPath } from '../../lib/auth';
-import { restrictedData } from '../../lib/private-store';
-import { getEntries, siteOptions } from '../../lib/site';
+import Layout from '../layouts/ArgonLayout.astro';
+import { authConfigured, isOwner, preventCaching, returnPath } from '../lib/auth';
+import { restrictedData } from '../lib/private-store';
+import { getEntries, siteOptions } from '../lib/site';
 
 preventCaching(Astro.response.headers);
 const owner = isOwner(Astro.cookies);
