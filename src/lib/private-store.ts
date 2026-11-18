@@ -4,7 +4,7 @@ import type { AstroCookies } from 'astro';
 import type { Comment, Entry } from './types';
 import { canRead, isOwner } from './auth';
 import { canonicalPath } from './site';
-import { editorialChanges, publishedEditorialEntry } from './editor-store';
+import { editorialChanges, publishedContentChanges } from './editor-store';
 
 interface RestrictedData { posts: Entry[]; comments: Comment[] }
 
@@ -20,14 +20,10 @@ export async function originalRestrictedData(): Promise<RestrictedData> {
 }
 
 export async function restrictedData(edits = editorialChanges()): Promise<RestrictedData> {
-  const data = await originalRestrictedData();
-  return {
-    posts: [
-      ...data.posts.filter((entry) => !edits.has(String(entry.id))),
-      ...[...edits.values()].map(publishedEditorialEntry).filter((entry): entry is Entry => !!entry && !!entry.visibility),
-    ],
-    comments: data.comments,
-  };
+  const [data, changes] = await Promise.all([originalRestrictedData(), publishedContentChanges(edits)]);
+  const original = data.posts.filter((entry) => !changes.has(String(entry.id)));
+  const published = [...changes.values()].filter((entry): entry is Entry => !!entry?.visibility);
+  return { posts: [...original, ...published], comments: data.comments };
 }
 
 export function findRestricted(data: RestrictedData, route: string, legacyId: string | null) {

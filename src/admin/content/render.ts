@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { isOwner, preventCaching } from '../../../lib/auth';
-import { renderEditorSource } from '../../../lib/editor';
+import { isOwner, preventCaching } from '../../lib/auth';
+import { renderEditorSource } from '../../lib/editor';
 
 export const POST: APIRoute = async ({ request, url, cookies }) => {
   const headers = new Headers();

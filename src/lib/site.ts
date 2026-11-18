@@ -1,11 +1,11 @@
 import { getCollection } from 'astro:content';
 import { decodeHTML } from 'entities';
-import data from '../data/site.json';
-import imported from '../data/posts.json';
-import history from '../data/comments.json';
+import data from 'argon:site-data';
+import imported from 'argon:posts';
+import history from 'argon:comments';
 import type { Bookmark, Comment, Entry, Heading, MenuItem, Term } from './types';
 import { option as selectOption } from './argon-options';
-import { editorialChanges, publishedEditorialEntry } from './editor-store';
+import { editorialChanges, publishedContentChanges } from './editor-store';
 
 export const site = data.site as typeof data.site & { started_at?: string };
 export const theme = data.argon as Record<string, string | boolean | number>;
@@ -65,11 +65,10 @@ export async function originalEntries() {
 }
 
 export async function getEntries(edits = editorialChanges()) {
-  const originals = await originalEntries();
-  const entries = ordered([
-    ...originals.filter((entry) => !edits.has(String(entry.id))),
-    ...[...edits.values()].map(publishedEditorialEntry).filter((entry): entry is Entry => !!entry && !entry.visibility),
-  ]);
+  const changes = await publishedContentChanges(edits);
+  const original = (await originalEntries()).filter((entry) => !changes.has(String(entry.id)));
+  const published = [...changes.values()].filter((entry): entry is Entry => !!entry && !entry.visibility);
+  const entries = ordered([...original, ...published]);
   if (new Set(entries.map((entry) => canonicalPath(entry.path))).size !== entries.length) {
     throw new Error('Two published entries have the same URL.');
   }

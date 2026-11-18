@@ -18,7 +18,7 @@ import { findRestricted, restrictedData } from '../lib/private-store';
 import { editorialChanges } from '../lib/editor-store';
 import { allowsComments, commentVisitor, loadInteractions, ownsComment, publicComments } from '../lib/interactions';
 import { canonicalPath, comments, getEntries, headings, ordered, searchTypes, site, siteOptions, stamp, stripTags, terms } from '../lib/site';
-import type { Entry } from '../lib/types';
+import type { Entry, Heading } from '../lib/types';
 
 const edits = editorialChanges();
 const entries = await getEntries(edits);
@@ -57,7 +57,8 @@ const availableTypes = [...new Set(filterConfig.flatMap((value) => {
 const defaultTypes = availableTypes.filter((type) => filterConfig.includes('*' + type));
 const searchFilters = option('enable_search_filters', 'true') === 'true' && availableTypes.length > 0;
 const chosen = search.get('post_type')?.split(',') ?? search.getAll('type');
-const types = !searchFilters ? supported : chosen.length ? availableTypes.filter((type) => chosen.includes(type))
+const filtersSubmitted = search.has('post_type') || search.has('filter');
+const types = !searchFilters ? supported : (filtersSubmitted || chosen.length) ? availableTypes.filter((type) => chosen.includes(type))
   : defaultTypes.length ? defaultTypes : availableTypes;
 const publicPreviews = ordered([...entries, ...restricted.posts.filter((item) => item.visibility === 'password').map((item) => ({
   id: item.id, type: item.type, title: item.title, path: item.path, published: item.published,
@@ -69,6 +70,17 @@ const feedItems = owner ? ordered([...publicPreviews, ...restricted.posts.filter
 const talks = feedItems.filter((item) => item.type === 'shuoshuo');
 const talkPage = entry?.template === 'shuoshuo.php' || (!entry && route === '/shuoshuo/');
 const timeline = entry?.template === 'timeline.php' || (!entry && route === '/archive/');
+const showArchiveMonth = option('archives_timeline_show_month', 'true') === 'true';
+const archiveHeadings = new Map<string, Heading>();
+if (timeline) {
+  for (const entry of articles) {
+    const { year, month } = stamp(entry.published);
+    const yearId = 'archive-' + year;
+    const monthId = yearId + '-' + month;
+    if (!archiveHeadings.has(yearId)) archiveHeadings.set(yearId, { id: yearId, label: year + ' 年', depth: 2 });
+    if (showArchiveMonth && !archiveHeadings.has(monthId)) archiveHeadings.set(monthId, { id: monthId, label: month + ' 月', depth: 3 });
+  }
+}
 const guestbook = entry?.template === 'msgboard.php';
 if (home || talkPage || entry?.type === 'shuoshuo') Astro.response.headers.set('Vary', 'Cookie');
 const list = !entry && (home || Boolean(term || archive || searchPage));
@@ -127,18 +139,25 @@ const bannerImage = entry && !passwordPage && option('show_thumbnail_in_banner_i
   home={home && found} list={list && found} progress={Boolean(entry && entry.type !== 'shuoshuo' && !passwordPage && !talkPage && !timeline && !guestbook)}
   commentTarget={canComment ? '#post_comment' : visibleComments.length ? '#comments' : undefined}
   socialImage={entry && !entry.visibility ? firstImage(entry, option) : undefined} socialType={isArticle ? 'article' : 'website'}
-  headings={guestbook || entry?.type === 'shuoshuo' ? [] : article.links} bannerImage={bannerImage} description={entry && !privateEntry ? stripTags(entry.excerpt) : undefined}>
+  headings={timeline ? [...archiveHeadings.values()] : guestbook || entry?.type === 'shuoshuo' ? [] : article.links} bannerImage={bannerImage} description={entry && !privateEntry ? stripTags(entry.excerpt) : undefined}>
   <div slot="information" class="page-information-card-container">
     {found && (talkPage || (list && !home)) && <div class="page-information-card card bg-gradient-secondary shadow-lg border-0"><div class="card-body">
-      <h1 class="page-information-card-title h3 text-black">{talkPage ? '说说' : title}{searchPage && query ? ' · ' + query : ''}</h1>
+      {searchPage ? <><h1 class="h3 text-black mr-2 d-inline-block">{query || '搜索'}</h1>
+        <p class="lead text-black mt-0 d-inline-block">的搜索结果</p></> :
+        <h1 class="page-information-card-title h3 text-black">{talkPage ? '说说' : title}</h1>}
       {talkPage && <p class="text-black mt-3 mb-0 opacity-8"><i class="fa fa-quote-left mr-1" aria-hidden="true"></i> {talks.length} 条说说</p>}
       {term?.description && <p class="text-black mt-3 mb-0">{term.description}</p>}
       {!talkPage && !searchPage && <p class="text-black mt-3 mb-0 opacity-8">{matching.length} 篇文章</p>}
-      {searchPage && searchFilters && <form action="/" method="get" data-astro-reload class="argon-search-filters">
+      {searchPage && searchFilters && <form action="/" method="get" data-astro-reload class="search-filters" data-search-filters>
         <input type="hidden" name="s" value={query} />
-        {availableTypes.map((type) => <label><input name="type" value={type} type="checkbox" checked={types.includes(type)} /> {typeLabels.get(type)}</label>)}
-        <button class="btn btn-sm btn-outline-primary" type="submit">筛选</button>
+        <input type="hidden" name="filter" value="1" />
+        {availableTypes.map((type) => <div class="custom-control custom-checkbox search-filter-wrapper">
+          <input id={'search_filter_' + type} name="type" value={type} class="custom-control-input search-filter" type="checkbox" checked={types.includes(type)} />
+          <label class="custom-control-label" for={'search_filter_' + type}>{typeLabels.get(type)}</label>
+        </div>)}
+        <noscript><button class="btn btn-sm btn-outline-primary" type="submit">筛选</button></noscript>
       </form>}
+      {searchPage && <p class="text-black mt-3 mb-0 opacity-8"><i class="fa fa-file-o mr-1" aria-hidden="true"></i> {matching.length} 个结果</p>}
     </div></div>}
   </div>
   {!found ? <article class="post card bg-white shadow-sm border-0"><div class="card-body">
@@ -155,7 +174,7 @@ const bannerImage = entry && !passwordPage && option('show_thumbnail_in_banner_i
     {talks.map((item) => <TalkCard entry={item} preview comments={commentsFor(item.id)} extraLikes={likesFor(item.id)} allowReply={allowsComments(item)} />)}
   </> : timeline ? <article class="post post-full card bg-white shadow-sm border-0">
     {entry ? <EntryHeader entry={entry} readStats={false} bannerCover={Boolean(bannerImage)} /> : <header class="post-header text-center"><h1 class="astro-entry-title">{title}</h1></header>}
-    <div class="post-content"><Timeline entries={articles} /></div>
+    <div class="post-content" data-article><Timeline entries={articles} showMonth={showArchiveMonth} /></div>
   </article> : entry ? <>
     {entry.type === 'shuoshuo' ? <TalkCard entry={{ ...entry, html: article.html || entry.html }} bodyComponent={Content} comments={visibleComments} extraLikes={likesFor(entry.id)} unlocked={allowed} /> : !guestbook && <article class="post post-full card bg-white shadow-sm border-0" id={'post-' + entry.id}>
       <EntryHeader entry={entry} commentCount={visibleComments.length} bannerCover={Boolean(bannerImage)} />

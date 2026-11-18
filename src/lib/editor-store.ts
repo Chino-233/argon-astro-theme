@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { stateDir } from './argon-state';
 import type { Entry } from './types';
+import { publishedChanges } from 'argon:content-overrides';
 
 export interface EditableEntry {
   entry: Entry;
@@ -47,4 +48,10 @@ export function saveEditorialChange(record: EditableEntry, expected: string) {
     ? db.prepare('UPDATE edits SET revision=?, record=? WHERE id=? AND revision=?').run(record.revision, data, id, expected)
     : db.prepare('INSERT OR IGNORE INTO edits(id,path,revision,record) VALUES (?,?,?,?)').run(id, path, record.revision, data);
   return result.changes === 1;
+}
+
+export async function publishedContentChanges(edits = editorialChanges()) {
+  const changes = new Map(await publishedChanges());
+  for (const [id, record] of edits) changes.set(id, publishedEditorialEntry(record));
+  return changes;
 }

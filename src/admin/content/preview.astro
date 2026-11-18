@@ -1,10 +1,10 @@
 ---
-import Layout from '../../../layouts/ArgonLayout.astro';
-import EntryHeader from '../../../components/EntryHeader.astro';
-import TalkCard from '../../../components/TalkCard.astro';
-import { isOwner, preventCaching } from '../../../lib/auth';
-import { editEntry, ownerEntries } from '../../../lib/editor';
-import { getEntries } from '../../../lib/site';
+import Layout from '../../layouts/ArgonLayout.astro';
+import EntryHeader from '../../components/EntryHeader.astro';
+import TalkCard from '../../components/TalkCard.astro';
+import { isOwner, preventCaching } from '../../lib/auth';
+import { editEntry, ownerEntries } from '../../lib/editor';
+import { getEntries } from '../../lib/site';
 
 preventCaching(Astro.response.headers);
 if (Astro.request.method !== 'POST' || !isOwner(Astro.cookies) || Astro.request.headers.get('Origin') !== Astro.url.origin) return new Response(null, {status:403, headers:Astro.response.headers});

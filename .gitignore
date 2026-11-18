@@ -1,9 +1,5 @@
 node_modules/
-dist/
-!public/assets/argon/vendor/wordpress/wp-includes/js/dist/
-!public/assets/argon/vendor/wordpress/wp-includes/js/dist/**
-!public/assets/argon/vendor/wordpress/wp-includes/css/dist/
-!public/assets/argon/vendor/wordpress/wp-includes/css/dist/**
+/dist/
 .astro/
 .migration/
 .npm-cache/

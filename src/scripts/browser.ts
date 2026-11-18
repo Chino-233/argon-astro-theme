@@ -505,6 +505,9 @@ document.addEventListener('keydown', (event) => {
 });
 document.addEventListener('change', (event) => {
   const target = event.target;
+  if (target instanceof HTMLInputElement && target.type === 'checkbox' && target.form?.hasAttribute('data-search-filters')) {
+    target.form.requestSubmit();
+  }
   if ((target instanceof HTMLInputElement || target instanceof HTMLSelectElement) && target.hasAttribute('data-pref')) {
     savePreference(target.name as keyof Preferences, target.value);
   }
@@ -524,6 +527,10 @@ system.addEventListener('change', applyPreferences);
 window.setInterval(updateClocks, 1000);
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    if (!document.querySelector('meta[name="astro-view-transitions-enabled"]')) initPage();
+    if (!document.querySelector('meta[name="astro-view-transitions-enabled"]')) {
+      initPage();
+        }
   }, { once: true });
-} else if (!document.querySelector('meta[name="astro-view-transitions-enabled"]')) initPage();
+} else if (!document.querySelector('meta[name="astro-view-transitions-enabled"]')) {
+  initPage();
+}

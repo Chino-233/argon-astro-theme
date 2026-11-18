@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { isOwner, preventCaching } from '../../../lib/auth';
-import { ownerEntries } from '../../../lib/editor';
-import { listEditorMedia, mediaLimit, saveEditorMedia } from '../../../lib/editor-media';
+import { isOwner, preventCaching } from '../../lib/auth';
+import { ownerEntries } from '../../lib/editor';
+import { listEditorMedia, mediaLimit, saveEditorMedia } from '../../lib/editor-media';
 
 export const GET: APIRoute = async ({ cookies }) => {
   const headers = new Headers();

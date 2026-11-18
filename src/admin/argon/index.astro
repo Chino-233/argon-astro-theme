@@ -1,8 +1,8 @@
 ---
-import { isOwner, preventCaching } from '../../../lib/auth';
-import { metadataChoices, optionGroups } from '../../../lib/argon-options';
-import { customCss, siteOptions } from '../../../lib/site';
-import { commentMailConfigured } from '../../../lib/comment-mail';
+import { isOwner, preventCaching } from '../../lib/auth';
+import { metadataChoices, optionGroups } from '../../lib/argon-options';
+import { customCss, siteOptions } from '../../lib/site';
+import { commentMailConfigured } from '../../lib/comment-mail';
 
 preventCaching(Astro.response.headers);
 if (!isOwner(Astro.cookies)) {

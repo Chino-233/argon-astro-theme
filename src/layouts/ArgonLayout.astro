@@ -6,12 +6,12 @@ import Footer from '../components/Footer.astro';
 import ThemeControls from '../components/ThemeControls.astro';
 import { customCss, siteOptions, site } from '../lib/site';
 import { colorPalette } from '../lib/color';
+import { counterEnabled } from '../lib/counter';
 import { customHtml } from '../lib/argon-options';
 import { argonAssets, bannerBackground } from '../lib/argon-features';
 import codeThemes from '../lib/code-themes.json';
 import type { Entry, Heading } from '../lib/types';
 import '../styles/argon-port.css';
-import { counterEnabled } from '../lib/counter';
 
 interface Props {
   title?: string;
@@ -78,7 +78,7 @@ const viewport = option('enable_mobile_scale', 'true') !== 'false' ? 'width=devi
 <!doctype html>
 <html lang={site.language} class:list={[
   option('article_header_style', 'article-header-style-2'),
-  { 'banner-as-cover': cover, 'banner-mini': bannerSize === 'mini', 'no-banner': bannerSize === 'hide',
+  { 'is-home': home, 'banner-as-cover': cover, 'banner-mini': bannerSize === 'mini', 'no-banner': bannerSize === 'hide',
     'toolbar-blur': option('toolbar_blur') === 'true', 'toolbar-mask': option('show_toolbar_mask') === 'true',
     'navbar-absolute': headroom === 'absolute', 'immersion-color': option('enable_immersion_color') === 'true',
     'no-navigation-animation': option('disable_pjax_animation') === 'true',

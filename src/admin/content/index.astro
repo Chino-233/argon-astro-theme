@@ -1,9 +1,9 @@
 ---
-import { isOwner, preventCaching } from '../../../lib/auth';
-import { ownerEntries, renderEditorSource } from '../../../lib/editor';
-import { publishedEditorialEntry } from '../../../lib/editor-store';
-import { site, stripTags, terms } from '../../../lib/site';
-import blockScripts from '../../../data/editor-scripts.json';
+import { isOwner, preventCaching } from '../../lib/auth';
+import { ownerEntries, renderEditorSource } from '../../lib/editor';
+import { publishedEditorialEntry } from '../../lib/editor-store';
+import { site, stripTags, terms } from '../../lib/site';
+import blockScripts from '../../data/editor-scripts.json';
 
 preventCaching(Astro.response.headers);
 if (!isOwner(Astro.cookies)) {

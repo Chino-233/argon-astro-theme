@@ -1,7 +1,7 @@
 ---
-import { isOwner, preventCaching } from '../../lib/auth';
-import { loadInteractions } from '../../lib/interactions';
-import { getEntries } from '../../lib/site';
+import { isOwner, preventCaching } from '../lib/auth';
+import { loadInteractions } from '../lib/interactions';
+import { getEntries } from '../lib/site';
 
 preventCaching(Astro.response.headers);
 if (!isOwner(Astro.cookies)) {
