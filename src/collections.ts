@@ -19,3 +19,4 @@ export const argonPosts = (base = './src/content/posts') => defineCollection({
     tags: z.array(z.number()).default([]),
   }),
 });
+

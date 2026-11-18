@@ -11,7 +11,6 @@ const routes = {
   '/robots.txt': 'robots.txt.ts',
   '/sitemap.xml': 'sitemap.xml.ts',
   '/traffic': 'traffic.ts',
-  '/media/[file]': 'media/[file].ts',
   '/interactions': 'interactions.ts',
   '/comment-captcha': 'comment-captcha.ts',
   '/comment-subscription': 'comment-subscription.astro',

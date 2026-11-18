@@ -6,11 +6,6 @@ const pages = {
   '/auth/argon/': 'argon/index.astro',
   '/auth/argon/config.json': 'argon/config.json.ts',
   '/auth/argon/save/': 'argon/save.ts',
-  '/auth/content/': 'content/index.astro',
-  '/auth/content/save/': 'content/save.ts',
-  '/auth/content/media/': 'content/media.ts',
-  '/auth/content/render/': 'content/render.ts',
-  '/auth/content/preview/': 'content/preview.astro',
 };
 
 export default function argonAdmin() {

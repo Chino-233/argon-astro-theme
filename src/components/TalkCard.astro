@@ -23,7 +23,6 @@ const returnTo = preview ? Astro.url.pathname + '#post-' + entry.id : entry.path
   </div>
   <article id={'post-' + entry.id} class:list={['card shuoshuo-main bg-white shadow-sm border-0', { 'shuoshuo-foldable': preview }]}>
     <a class="shuoshuo-title" href={entry.path}>{locked ? '密码保护：' + entry.title : entry.title}</a>
-    {entry.visibility === 'private' && <span class="badge badge-secondary">私密</span>}
     {locked ? <div class="shuoshuo-content"><p>此内容受密码保护。</p><a href={entry.path}>输入密码查看</a></div>
       : <TalkBody html={entry.html} preview={preview} bodyComponent={Body} />}
     {preview && comments.length > 0 && !locked && <ul class="shuoshuo-comments pl-0 mb-0">

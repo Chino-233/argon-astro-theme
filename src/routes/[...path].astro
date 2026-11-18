@@ -15,20 +15,18 @@ import { customHtml } from '../lib/argon-options';
 import { firstImage, relatedArticles } from '../lib/argon-features';
 import { canRead, isOwner, preventCaching } from '../lib/auth';
 import { findRestricted, restrictedData } from '../lib/private-store';
-import { editorialChanges } from '../lib/editor-store';
 import { allowsComments, commentVisitor, loadInteractions, ownsComment, publicComments } from '../lib/interactions';
 import { canonicalPath, comments, getEntries, headings, ordered, searchTypes, site, siteOptions, stamp, stripTags, terms } from '../lib/site';
 import type { Entry, Heading } from '../lib/types';
 
-const edits = editorialChanges();
-const entries = await getEntries(edits);
+const entries = await getEntries();
 const route = canonicalPath(Astro.url.pathname);
 const owner = isOwner(Astro.cookies);
 const search = Astro.url.searchParams;
 const option = siteOptions(Astro.locals.argonOverrides);
 const legacy = route === '/' ? (search.get('p') ?? search.get('page_id')) : null;
 const legacyId = legacy && /^\d+$/.test(legacy) ? legacy : null;
-const restricted = await restrictedData(edits);
+const restricted = await restrictedData();
 const privateEntry = findRestricted(restricted, route, legacyId);
 const publicEntry = entries.find((item) => canonicalPath(item.path) === route || (legacyId && String(item.id) === legacyId));
 const allowed = privateEntry ? canRead(privateEntry, Astro.cookies) : false;
@@ -36,7 +34,7 @@ const passwordPage = Boolean(privateEntry?.visibility === 'password' && !allowed
 const missingPrivate = Boolean(privateEntry?.visibility === 'private' && !allowed);
 const entry = privateEntry ? (allowed || passwordPage ? privateEntry : undefined) : publicEntry;
 if (owner || privateEntry || route.startsWith('/auth/')) preventCaching(Astro.response.headers);
-if (entry && legacyId && !privateEntry) return Astro.redirect(new URL(entry.path, Astro.url).pathname, 301);
+if (entry && legacyId && !privateEntry) return Astro.redirect(entry.path, 301);
 
 const baseRoute = route.replace(/\/page\/(\d+)\/$/, '/');
 const page = Number(route.match(/\/page\/(\d+)\/$/)?.[1] ?? 1);
@@ -66,8 +64,7 @@ const publicPreviews = ordered([...entries, ...restricted.posts.filter((item) =>
 }))]);
 const articles = publicPreviews.filter((item) => item.type === 'post');
 const hiddenCategories = new Set(option('hide_categories').split(',').filter(Boolean).map(Number));
-const feedItems = owner ? ordered([...publicPreviews, ...restricted.posts.filter((item) => item.visibility === 'private')]) : publicPreviews;
-const talks = feedItems.filter((item) => item.type === 'shuoshuo');
+const talks = publicPreviews.filter((item) => item.type === 'shuoshuo');
 const talkPage = entry?.template === 'shuoshuo.php' || (!entry && route === '/shuoshuo/');
 const timeline = entry?.template === 'timeline.php' || (!entry && route === '/archive/');
 const showArchiveMonth = option('archives_timeline_show_month', 'true') === 'true';
@@ -82,7 +79,7 @@ if (timeline) {
   }
 }
 const guestbook = entry?.template === 'msgboard.php';
-if (home || talkPage || entry?.type === 'shuoshuo') Astro.response.headers.set('Vary', 'Cookie');
+if (talkPage || entry?.type === 'shuoshuo') Astro.response.headers.set('Vary', 'Cookie');
 const list = !entry && (home || Boolean(term || archive || searchPage));
 const matching = list ? (
   searchPage ? entries.filter((item) => types.includes(item.searchType ?? item.type) && query && query.toLocaleLowerCase().split(/\s+/).every((word) =>
@@ -93,7 +90,7 @@ const matching = list ? (
       return date.year === archive[1] && (!archive[2] || date.month.padStart(2, '0') === archive[2]) &&
         (!archive[3] || date.day.padStart(2, '0') === archive[3]);
     })
-  : feedItems.filter((item) => (item.type === 'post' && !item.categories?.some((id) => hiddenCategories.has(id))) ||
+  : publicPreviews.filter((item) => (item.type === 'post' && !item.categories?.some((id) => hiddenCategories.has(id))) ||
     (item.type === 'shuoshuo' && option('home_show_shuoshuo', 'true') === 'true'))
 ) : [];
 const total = Math.max(1, Math.ceil(matching.length / pageSize));
@@ -105,7 +102,7 @@ if (!found) {
 const displayed = matching.slice((page - 1) * pageSize, page * pageSize);
 const entryTitle = passwordPage ? '密码保护：' + entry?.title : entry?.title;
 const title = !found ? '找不到页面' : entryTitle ?? (searchPage ? '搜索结果' : term?.name ?? (archive ? '归档 ' + archive.slice(1).filter(Boolean).join('年').replace(/年(\d\d)年/, '年$1月') : talkPage ? '碎碎念' : timeline ? '归档' : undefined));
-const markdown = entry && !passwordPage && entry.sourceFormat === 'markdown' && typeof entry.id === 'string' ? await getEntry('posts', entry.id) : undefined;
+const markdown = entry && !passwordPage && typeof entry.id === 'string' ? await getEntry('posts', entry.id) : undefined;
 const rendered = markdown ? await render(markdown) : undefined;
 const Content = rendered?.Content;
 const article = entry && !passwordPage && !rendered

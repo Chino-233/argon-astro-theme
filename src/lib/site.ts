@@ -3,9 +3,9 @@ import { decodeHTML } from 'entities';
 import data from 'argon:site-data';
 import imported from 'argon:posts';
 import history from 'argon:comments';
+import { publishedChanges } from 'argon:content-overrides';
 import type { Bookmark, Comment, Entry, Heading, MenuItem, Term } from './types';
 import { option as selectOption } from './argon-options';
-import { editorialChanges, publishedContentChanges } from './editor-store';
 
 export const site = data.site as typeof data.site & { started_at?: string };
 export const theme = data.argon as Record<string, string | boolean | number>;
@@ -64,10 +64,10 @@ export async function originalEntries() {
   return ordered([...(imported as Entry[]), ...posts]);
 }
 
-export async function getEntries(edits = editorialChanges()) {
-  const changes = await publishedContentChanges(edits);
-  const original = (await originalEntries()).filter((entry) => !changes.has(String(entry.id)));
-  const published = [...changes.values()].filter((entry): entry is Entry => !!entry && !entry.visibility);
+export async function getEntries() {
+  const edits = await publishedChanges();
+  const original = (await originalEntries()).filter((entry) => !edits.has(String(entry.id)));
+  const published = [...edits.values()].filter((entry): entry is Entry => !!entry && !entry.visibility);
   const entries = ordered([...original, ...published]);
   if (new Set(entries.map((entry) => canonicalPath(entry.path))).size !== entries.length) {
     throw new Error('Two published entries have the same URL.');

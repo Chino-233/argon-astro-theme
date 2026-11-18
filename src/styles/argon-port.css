@@ -72,27 +72,6 @@ html[data-headroom="true"] #navbar-main { transition: transform .24s ease, backg
 #navbar_search_input_container { margin: 0; }
 #navbar_search_input_container .input-group-text { cursor: pointer; }
 #navbar_search_input_container:not(.open):not(:focus-within) #navbar_search_input { visibility: hidden; }
-#navbar_search_input_container .input-group,
-#argon_search_modal .input-group { flex-wrap: nowrap; }
-#navbar_search_input_container #navbar_search_input,
-#argon_search_modal .form-control { min-width: 0; }
-#navbar_search_input_container .input-group {
-  width: max-content;
-  align-items: stretch;
-  border-radius: var(--card-radius, 4px);
-  overflow: hidden;
-}
-#navbar_search_input_container.open .input-group { background: var(--color-widgets, #fff); }
-#navbar_search_input_container .input-group-text,
-#navbar_search_input_container #navbar_search_input {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  height: 2.625rem;
-}
-#navbar_search_input_container .input-group-text { padding: 0 .75rem; }
-#navbar_search_input_container .input-group-text:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
-#navbar_search_input_container #navbar_search_input { flex: 0 1 auto; width: min(200px, 18vw); padding-inline: 0 .75rem; }
 .argon-toolbar-menu { position: relative; }
 .argon-toolbar-menu summary, .argon-sidebar-group summary { list-style: none; cursor: pointer; }
 .argon-toolbar-menu summary::-webkit-details-marker, .argon-sidebar-group summary::-webkit-details-marker { display: none; }

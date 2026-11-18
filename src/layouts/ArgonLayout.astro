@@ -168,6 +168,5 @@ const viewport = option('enable_mobile_scale', 'true') !== 'false' ? 'width=devi
     <dialog id="argon_image_preview" class="image-preview"><button class="argon-close" type="button" data-close-dialog aria-label="关闭">×</button><img alt="" /></dialog>
     {customFoot && <Fragment set:html={customFoot} />}
     <script src="../scripts/browser.ts"></script>
-    {counterEnabled() && <script src="../scripts/counter.ts"></script>}
   </body>
 </html>

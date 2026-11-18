@@ -26,8 +26,7 @@
     "src/scripts",
     "src/site-middleware.ts",
     "src/styles",
-    "public/assets/argon",
-    "src/data/editor-scripts.json"
+    "public/assets/argon"
   ],
   "scripts": {
     "dev": "node --env-file-if-exists=.env node_modules/astro/bin/astro.mjs dev",

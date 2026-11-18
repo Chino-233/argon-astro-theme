@@ -23,7 +23,6 @@ export interface Entry {
   visibility?: 'private' | 'password';
   passwordHash?: string | null;
   media?: string[];
-  sourceFormat?: 'markdown' | 'html';
 }
 
 export interface Heading {

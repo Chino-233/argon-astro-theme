@@ -48,7 +48,7 @@ export function isOwner(cookies: AstroCookies) {
 
 export function canRead(entry: Entry, cookies: AstroCookies) {
   if (!entry.visibility || isOwner(cookies)) return true;
-  return entry.visibility === 'password' && valid(cookies, 'argon_unlock_' + entry.id, 'entry:' + entry.id + ':' + entry.passwordHash);
+  return entry.visibility === 'password' && valid(cookies, 'argon_unlock_' + entry.id, 'entry:' + entry.id);
 }
 
 export function ownerLogin(cookies: AstroCookies, url: URL) {
@@ -56,12 +56,12 @@ export function ownerLogin(cookies: AstroCookies, url: URL) {
 }
 
 export function unlockEntry(cookies: AstroCookies, entry: Entry, url: URL) {
-  return write(cookies, 'argon_unlock_' + entry.id, 'entry:' + entry.id + ':' + entry.passwordHash, url, 4 * 60 * 60);
+  return write(cookies, 'argon_unlock_' + entry.id, 'entry:' + entry.id, url, 4 * 60 * 60);
 }
 
 export function logout(cookies: AstroCookies, cookieHeader: string) {
   for (const name of cookieHeader.split(';').map((part) => part.trim().split('=', 1)[0])) {
-    if (name === ownerCookie || /^argon_unlock_[\w-]+$/.test(name)) cookies.delete(name, { path: '/' });
+    if (name === ownerCookie || /^argon_unlock_\d+$/.test(name)) cookies.delete(name, { path: '/' });
   }
 }
 

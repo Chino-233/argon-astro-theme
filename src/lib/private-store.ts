@@ -4,7 +4,7 @@ import type { AstroCookies } from 'astro';
 import type { Comment, Entry } from './types';
 import { canRead, isOwner } from './auth';
 import { canonicalPath } from './site';
-import { editorialChanges, publishedContentChanges } from './editor-store';
+import { publishedChanges } from 'argon:content-overrides';
 
 interface RestrictedData { posts: Entry[]; comments: Comment[] }
 
@@ -19,11 +19,11 @@ export async function originalRestrictedData(): Promise<RestrictedData> {
   return JSON.parse(await readFile(resolve(dir, 'entries.json'), 'utf-8')) as RestrictedData;
 }
 
-export async function restrictedData(edits = editorialChanges()): Promise<RestrictedData> {
-  const [data, changes] = await Promise.all([originalRestrictedData(), publishedContentChanges(edits)]);
-  const original = data.posts.filter((entry) => !changes.has(String(entry.id)));
-  const published = [...changes.values()].filter((entry): entry is Entry => !!entry?.visibility);
-  return { posts: [...original, ...published], comments: data.comments };
+export async function restrictedData(): Promise<RestrictedData> {
+  const [data, edits] = await Promise.all([originalRestrictedData(), publishedChanges()]);
+  const imported = data.posts.filter((entry) => !edits.has(String(entry.id)));
+  const published = [...edits.values()].filter((entry): entry is Entry => !!entry?.visibility);
+  return { posts: [...imported, ...published], comments: data.comments };
 }
 
 export function findRestricted(data: RestrictedData, route: string, legacyId: string | null) {
