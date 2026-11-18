@@ -1,0 +1,214 @@
+[
+  {
+    "handle": "react",
+    "path": "wp-includes/js/dist/vendor/react.min.js"
+  },
+  {
+    "handle": "react-dom",
+    "path": "wp-includes/js/dist/vendor/react-dom.min.js"
+  },
+  {
+    "handle": "react-jsx-runtime",
+    "path": "wp-includes/js/dist/vendor/react-jsx-runtime.min.js"
+  },
+  {
+    "handle": "wp-dom-ready",
+    "path": "wp-includes/js/dist/dom-ready.min.js"
+  },
+  {
+    "handle": "wp-hooks",
+    "path": "wp-includes/js/dist/hooks.min.js"
+  },
+  {
+    "handle": "wp-i18n",
+    "path": "wp-includes/js/dist/i18n.min.js"
+  },
+  {
+    "handle": "wp-a11y",
+    "path": "wp-includes/js/dist/a11y.min.js"
+  },
+  {
+    "handle": "wp-blob",
+    "path": "wp-includes/js/dist/blob.min.js"
+  },
+  {
+    "handle": "wp-block-serialization-default-parser",
+    "path": "wp-includes/js/dist/block-serialization-default-parser.min.js"
+  },
+  {
+    "handle": "wp-autop",
+    "path": "wp-includes/js/dist/autop.min.js"
+  },
+  {
+    "handle": "wp-deprecated",
+    "path": "wp-includes/js/dist/deprecated.min.js"
+  },
+  {
+    "handle": "wp-dom",
+    "path": "wp-includes/js/dist/dom.min.js"
+  },
+  {
+    "handle": "wp-escape-html",
+    "path": "wp-includes/js/dist/escape-html.min.js"
+  },
+  {
+    "handle": "wp-element",
+    "path": "wp-includes/js/dist/element.min.js"
+  },
+  {
+    "handle": "wp-is-shallow-equal",
+    "path": "wp-includes/js/dist/is-shallow-equal.min.js"
+  },
+  {
+    "handle": "wp-keycodes",
+    "path": "wp-includes/js/dist/keycodes.min.js"
+  },
+  {
+    "handle": "wp-priority-queue",
+    "path": "wp-includes/js/dist/priority-queue.min.js"
+  },
+  {
+    "handle": "wp-private-apis",
+    "path": "wp-includes/js/dist/private-apis.min.js"
+  },
+  {
+    "handle": "wp-undo-manager",
+    "path": "wp-includes/js/dist/undo-manager.min.js"
+  },
+  {
+    "handle": "wp-compose",
+    "path": "wp-includes/js/dist/compose.min.js"
+  },
+  {
+    "handle": "wp-redux-routine",
+    "path": "wp-includes/js/dist/redux-routine.min.js"
+  },
+  {
+    "handle": "wp-data",
+    "path": "wp-includes/js/dist/data.min.js"
+  },
+  {
+    "handle": "wp-html-entities",
+    "path": "wp-includes/js/dist/html-entities.min.js"
+  },
+  {
+    "handle": "wp-rich-text",
+    "path": "wp-includes/js/dist/rich-text.min.js"
+  },
+  {
+    "handle": "wp-shortcode",
+    "path": "wp-includes/js/dist/shortcode.min.js"
+  },
+  {
+    "handle": "wp-warning",
+    "path": "wp-includes/js/dist/warning.min.js"
+  },
+  {
+    "handle": "wp-blocks",
+    "path": "wp-includes/js/dist/blocks.min.js"
+  },
+  {
+    "handle": "moment",
+    "path": "wp-includes/js/dist/vendor/moment.min.js"
+  },
+  {
+    "handle": "wp-date",
+    "path": "wp-includes/js/dist/date.min.js"
+  },
+  {
+    "handle": "wp-primitives",
+    "path": "wp-includes/js/dist/primitives.min.js"
+  },
+  {
+    "handle": "wp-theme",
+    "path": "wp-includes/js/dist/theme.min.js"
+  },
+  {
+    "handle": "wp-components",
+    "path": "wp-includes/js/dist/components.min.js"
+  },
+  {
+    "handle": "wp-keyboard-shortcuts",
+    "path": "wp-includes/js/dist/keyboard-shortcuts.min.js"
+  },
+  {
+    "handle": "wp-url",
+    "path": "wp-includes/js/dist/url.min.js"
+  },
+  {
+    "handle": "wp-api-fetch",
+    "path": "wp-includes/js/dist/api-fetch.min.js"
+  },
+  {
+    "handle": "wp-preferences-persistence",
+    "path": "wp-includes/js/dist/preferences-persistence.min.js"
+  },
+  {
+    "handle": "wp-preferences",
+    "path": "wp-includes/js/dist/preferences.min.js"
+  },
+  {
+    "handle": "wp-commands",
+    "path": "wp-includes/js/dist/commands.min.js"
+  },
+  {
+    "handle": "wp-notices",
+    "path": "wp-includes/js/dist/notices.min.js"
+  },
+  {
+    "handle": "wp-style-engine",
+    "path": "wp-includes/js/dist/style-engine.min.js"
+  },
+  {
+    "handle": "wp-token-list",
+    "path": "wp-includes/js/dist/token-list.min.js"
+  },
+  {
+    "handle": "wp-upload-media",
+    "path": "wp-includes/js/dist/upload-media.min.js"
+  },
+  {
+    "handle": "wp-block-editor",
+    "path": "wp-includes/js/dist/block-editor.min.js"
+  },
+  {
+    "handle": "wp-core-data",
+    "path": "wp-includes/js/dist/core-data.min.js"
+  },
+  {
+    "handle": "wp-patterns",
+    "path": "wp-includes/js/dist/patterns.min.js"
+  },
+  {
+    "handle": "wp-server-side-render",
+    "path": "wp-includes/js/dist/server-side-render.min.js"
+  },
+  {
+    "handle": "wp-wordcount",
+    "path": "wp-includes/js/dist/wordcount.min.js"
+  },
+  {
+    "handle": "utils",
+    "path": "wp-includes/js/utils.min.js"
+  },
+  {
+    "handle": "jquery-core",
+    "path": "wp-includes/js/jquery/jquery.min.js"
+  },
+  {
+    "handle": "jquery-migrate",
+    "path": "wp-includes/js/jquery/jquery-migrate.min.js"
+  },
+  {
+    "handle": "editor",
+    "path": "wp-admin/js/editor.min.js"
+  },
+  {
+    "handle": "wp-block-library",
+    "path": "wp-includes/js/dist/block-library.min.js"
+  },
+  {
+    "handle": "wp-format-library",
+    "path": "wp-includes/js/dist/format-library.min.js"
+  }
+]

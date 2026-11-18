@@ -1,4 +1,4 @@
-import { createHmac, pbkdf2, timingSafeEqual } from 'node:crypto';
+import { createHmac, pbkdf2, randomBytes, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import type { AstroCookies } from 'astro';
 import type { Entry } from './types';
@@ -48,7 +48,7 @@ export function isOwner(cookies: AstroCookies) {
 
 export function canRead(entry: Entry, cookies: AstroCookies) {
   if (!entry.visibility || isOwner(cookies)) return true;
-  return entry.visibility === 'password' && valid(cookies, 'argon_unlock_' + entry.id, 'entry:' + entry.id);
+  return entry.visibility === 'password' && valid(cookies, 'argon_unlock_' + entry.id, 'entry:' + entry.id + ':' + entry.passwordHash);
 }
 
 export function ownerLogin(cookies: AstroCookies, url: URL) {
@@ -56,12 +56,12 @@ export function ownerLogin(cookies: AstroCookies, url: URL) {
 }
 
 export function unlockEntry(cookies: AstroCookies, entry: Entry, url: URL) {
-  return write(cookies, 'argon_unlock_' + entry.id, 'entry:' + entry.id, url, 4 * 60 * 60);
+  return write(cookies, 'argon_unlock_' + entry.id, 'entry:' + entry.id + ':' + entry.passwordHash, url, 4 * 60 * 60);
 }
 
 export function logout(cookies: AstroCookies, cookieHeader: string) {
   for (const name of cookieHeader.split(';').map((part) => part.trim().split('=', 1)[0])) {
-    if (name === ownerCookie || /^argon_unlock_\d+$/.test(name)) cookies.delete(name, { path: '/' });
+    if (name === ownerCookie || /^argon_unlock_[\w-]+$/.test(name)) cookies.delete(name, { path: '/' });
   }
 }
 
@@ -74,6 +74,12 @@ export async function verifyPassword(input: string, stored?: string | null) {
   if (salt.length !== 16 || expected.length !== 32) return false;
   const actual = await derive(input, salt, 600000, 32, 'sha256');
   return timingSafeEqual(expected, actual);
+}
+
+export async function hashPassword(input: string) {
+  const salt = randomBytes(16);
+  const hash = await derive(input, salt, 600000, 32, 'sha256');
+  return ['pbkdf2-sha256', '600000', salt.toString('base64'), hash.toString('base64')].join('$');
 }
 
 export function allowAttempt(client: string, scope = 'auth') {

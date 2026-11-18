@@ -1,10 +1,13 @@
 ---
 import { siteOptions } from '../lib/site';
+import { counterEnabled, currentTotals } from '../lib/counter';
 const option = siteOptions(Astro.locals.argonOverrides);
 const { owner = false } = Astro.props;
+const totals = counterEnabled() ? currentTotals() : undefined;
 ---
 <footer id="footer" class="site-footer card shadow-sm border-0">
   <Fragment set:html={option('footer_html')} />
+  {totals && <div class="argon-traffic">本站浏览 <span data-argon-total-views>{totals.views.toLocaleString('zh-CN')}</span> 次 · 独立访客 <span data-argon-total-visitors>{totals.visitors.toLocaleString('zh-CN')}</span></div>}
   <div>Theme <a href="https://github.com/solstice23/argon-theme" target="_blank" rel="noopener noreferrer"><strong>Argon</strong></a>{option('hide_footer_author') !== 'true' && ' By solstice23'}</div>
   {owner && <a href="/auth/">私密内容</a>}
 </footer>

@@ -11,6 +11,7 @@ import { argonAssets, bannerBackground } from '../lib/argon-features';
 import codeThemes from '../lib/code-themes.json';
 import type { Entry, Heading } from '../lib/types';
 import '../styles/argon-port.css';
+import { counterEnabled } from '../lib/counter';
 
 interface Props {
   title?: string;
@@ -114,6 +115,8 @@ const viewport = option('enable_mobile_scale', 'true') !== 'false' ? 'width=devi
     <link rel="alternate" type="application/rss+xml" title={site.title} href="/feed/" />
     <link rel="stylesheet" href={assets.asset('argon_css_merged.css')} />
     <link rel="stylesheet" href={assets.stylesheet} />
+    <link rel="stylesheet" href="/assets/argon/vendor/wordpress/wp-includes/css/dist/block-library/style.min.css" />
+    <link rel="stylesheet" href="/assets/argon/block-content.css" />
     {option('disable_googlefont', 'true') !== 'true' && <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700%7CNoto+Serif+SC:300,600&display=swap" />}
     {option('enable_code_highlight') === 'true' && <link rel="stylesheet" href={assets.asset('vendor/highlight/styles/' + codeTheme + '.css')} />}
     {smoothScripts[smooth] && <script is:inline src={assets.asset('vendor/smoothscroll/' + smoothScripts[smooth])} defer></script>}
@@ -133,7 +136,7 @@ const viewport = option('enable_mobile_scale', 'true') !== 'false' ? 'width=devi
       } catch {}
     </script>
   </head>
-  <body class:list={[{ home, blog: home }, 'argon-astro']}>
+  <body class:list={[{ home, blog: home }, 'argon-astro']} data-argon-track={counterEnabled() && !owner && !restricted ? 'true' : undefined}>
     <Nav />
     <section id="banner" class="banner section section-lg section-shaped">
       <div class:list={['shape', option('banner_background_color_type', 'shape-primary'), { 'shape-style-1': option('banner_background_hide_shapes') !== 'true' }]} aria-hidden="true">
@@ -165,5 +168,6 @@ const viewport = option('enable_mobile_scale', 'true') !== 'false' ? 'width=devi
     <dialog id="argon_image_preview" class="image-preview"><button class="argon-close" type="button" data-close-dialog aria-label="关闭">×</button><img alt="" /></dialog>
     {customFoot && <Fragment set:html={customFoot} />}
     <script src="../scripts/browser.ts"></script>
+    {counterEnabled() && <script src="../scripts/counter.ts"></script>}
   </body>
 </html>

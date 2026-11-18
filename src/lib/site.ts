@@ -5,6 +5,7 @@ import imported from '../data/posts.json';
 import history from '../data/comments.json';
 import type { Bookmark, Comment, Entry, Heading, MenuItem, Term } from './types';
 import { option as selectOption } from './argon-options';
+import { editorialChanges, publishedEditorialEntry } from './editor-store';
 
 export const site = data.site as typeof data.site & { started_at?: string };
 export const theme = data.argon as Record<string, string | boolean | number>;
@@ -51,16 +52,24 @@ export function ordered(entries: Entry[]) {
   return [...entries].sort((a, b) => Date.parse(b.published) - Date.parse(a.published));
 }
 
-export async function getEntries() {
+export async function originalEntries() {
   const markdown = await getCollection('posts');
   const posts: Entry[] = markdown.map(({ id, data, body }) => ({
     id, type: data.type, title: data.title, path: data.path,
     searchType: data.searchType, template: data.template, linkStyle: data.linkStyle,
     published: data.date.toISOString(), updated: data.updated?.toISOString(),
     excerpt: data.excerpt ?? '', featuredImage: data.featuredImage ?? '',
-    categories: data.categories, tags: data.tags, html: body ?? '',
+    categories: data.categories, tags: data.tags, html: body ?? '', sourceFormat: 'markdown',
   }));
-  const entries = ordered([...(imported as Entry[]), ...posts]);
+  return ordered([...(imported as Entry[]), ...posts]);
+}
+
+export async function getEntries(edits = editorialChanges()) {
+  const originals = await originalEntries();
+  const entries = ordered([
+    ...originals.filter((entry) => !edits.has(String(entry.id))),
+    ...[...edits.values()].map(publishedEditorialEntry).filter((entry): entry is Entry => !!entry && !entry.visibility),
+  ]);
   if (new Set(entries.map((entry) => canonicalPath(entry.path))).size !== entries.length) {
     throw new Error('Two published entries have the same URL.');
   }

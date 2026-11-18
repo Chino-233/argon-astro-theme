@@ -4,6 +4,7 @@ import type { AstroCookies } from 'astro';
 import type { Comment, Entry } from './types';
 import { canRead, isOwner } from './auth';
 import { canonicalPath } from './site';
+import { editorialChanges, publishedEditorialEntry } from './editor-store';
 
 interface RestrictedData { posts: Entry[]; comments: Comment[] }
 
@@ -12,10 +13,21 @@ function root() {
   return value ? resolve(value) : null;
 }
 
-export async function restrictedData(): Promise<RestrictedData> {
+export async function originalRestrictedData(): Promise<RestrictedData> {
   const dir = root();
   if (!dir) return { posts: [], comments: [] };
   return JSON.parse(await readFile(resolve(dir, 'entries.json'), 'utf-8')) as RestrictedData;
+}
+
+export async function restrictedData(edits = editorialChanges()): Promise<RestrictedData> {
+  const data = await originalRestrictedData();
+  return {
+    posts: [
+      ...data.posts.filter((entry) => !edits.has(String(entry.id))),
+      ...[...edits.values()].map(publishedEditorialEntry).filter((entry): entry is Entry => !!entry && !!entry.visibility),
+    ],
+    comments: data.comments,
+  };
 }
 
 export function findRestricted(data: RestrictedData, route: string, legacyId: string | null) {

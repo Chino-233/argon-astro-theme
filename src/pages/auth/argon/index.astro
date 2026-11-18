@@ -22,27 +22,13 @@ const error = Astro.url.searchParams.get('error')?.slice(0, 200);
     <meta name="robots" content="noindex,nofollow" />
     <title>Argon 设置</title>
     <link rel="stylesheet" href="/assets/argon/argon_css_merged.css" />
-    <style>
-      body { margin: 0; background: #f5f7fb; color: #20283b; }
-      .admin-shell { max-width: 1040px; margin: auto; padding: 32px 20px 60px; }
-      .admin-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-      .admin-header h1 { color: #182037; font-size: 2rem; margin: 0; }
-      .admin-header a { margin-left: 12px; }
-      .admin-nav { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 18px 0; }
-      .admin-section { border: 1px solid #e5e9f2; background: white; border-radius: 8px; margin: 0 0 16px; padding: 20px; scroll-margin: 16px; }
-      .admin-section h2 { font-size: 1.2rem; color: #182037; margin-bottom: 16px; }
-      .fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px 20px; }
-      label { display: block; color: #2a3550; font-weight: 600; margin: 0; }
-      input, select, textarea { margin-top: 4px; }
-      input[type="color"] { padding: 5px 10px; width: 112px; }
-      .save-bar { position: sticky; bottom: 0; z-index: 1; padding: 12px 0; background: #f5f7fb; }
-      @media (max-width: 580px) { .fields { grid-template-columns: 1fr; } }
-    </style>
+    <link rel="stylesheet" href="/assets/argon/options-admin.css" />
+    <script is:inline src="/assets/argon/options-admin.js" defer></script>
   </head>
   <body>
     <main class="admin-shell">
       <header class="admin-header">
-        <h1>Argon 设置</h1>
+        <h1>Argon 主题选项</h1>
         <div><a href="/auth/">站主管理</a><a href="/">查看站点</a></div>
       </header>
       <nav class="admin-nav" aria-label="设置分组">

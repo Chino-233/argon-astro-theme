@@ -1,6 +1,7 @@
 ---
 import { articleStats, siteOptions, stamp, terms } from '../lib/site';
 import type { Entry } from '../lib/types';
+import { additionalPostViews, counterEnabled } from '../lib/counter';
 
 const { entry, readStats = true, commentCount = 0 } = Astro.props as { entry: Entry; readStats?: boolean; commentCount?: number };
 const option = siteOptions(Astro.locals.argonOverrides);
@@ -16,8 +17,11 @@ const pretty = (value: typeof date) => {
 };
 const fields = (Astro.locals.argonOverrides.argon_article_meta ?? option('article_meta', 'time|views|categories|edittime')).split('|');
 const count = entry.views == null ? NaN : Number(String(entry.views).replaceAll(',', ''));
+const live = counterEnabled() && entry.type === 'post' && !entry.visibility;
+const baseline = Number.isFinite(count) ? Math.max(count, 0) : 0;
+const displayedViews = live ? baseline + additionalPostViews(entry.id) : count;
 const visible = fields.filter((key) => (
-  key === 'time' || (key === 'views' && Number.isFinite(count)) || (key === 'edittime' && updated) ||
+  key === 'time' || (key === 'views' && Number.isFinite(displayedViews)) || (key === 'edittime' && updated) ||
   (key === 'categories' && cats.length) || (key === 'author' && entry.author) ||
   (key === 'comments' && commentCount)
 ));
@@ -34,7 +38,7 @@ const minutes = (useImportedTime ? entry.readingTime : undefined) ?? (
     {index > 0 && <span class="post-meta-devide">|</span>}
     <div class={'post-meta-detail post-meta-detail-' + key}>
       {key === 'time' && <><i class="fa fa-clock-o" aria-hidden="true"></i> <time datetime={entry.published}>{pretty(date)}</time></>}
-      {key === 'views' && <><i class="fa fa-eye" aria-hidden="true"></i> <span title="浏览量">{new Intl.NumberFormat('en-US').format(count)}</span></>}
+      {key === 'views' && <><i class="fa fa-eye" aria-hidden="true"></i> <span title="浏览量" data-argon-view-baseline={live ? baseline : undefined}>{displayedViews.toLocaleString('zh-CN')}</span></>}
       {key === 'edittime' && updated && <><i class="fa fa-clock-o" aria-hidden="true"></i> <time datetime={entry.updated}>{pretty(updated)}</time></>}
       {key === 'categories' && <><i class="fa fa-bookmark-o" aria-hidden="true"></i> {cats.map((term) => <a class="post-meta-detail-catagory-link" href={term.url}>{term.name}</a>)}</>}
       {key === 'author' && <><i class="fa fa-user-o" aria-hidden="true"></i> {entry.author}</>}

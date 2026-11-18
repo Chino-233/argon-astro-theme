@@ -38,10 +38,11 @@ export const POST: APIRoute = async ({ request, url, cookies, clientAddress }) =
     const data = await restrictedData();
     const entry = data.posts.find((post) => String(post.id) === fields.get('id') && post.visibility === 'password');
     if (!entry) return fail(404, '页面不存在。');
+    const path = new URL(entry.path, url).pathname;
     if (await verifyPassword(password, entry.passwordHash) && unlockEntry(cookies, entry, url)) {
-      return redirect(entry.path);
+      return redirect(path);
     }
-    return redirect(entry.path + '?error=1');
+    return redirect(path + '?error=1');
   }
   return fail(400, '无效的表单请求。');
 };

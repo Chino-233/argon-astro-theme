@@ -9,7 +9,7 @@ interface Props { entry: Entry; commentCount?: number; extraLikes?: number }
 const { entry, commentCount = 0, extraLikes = 0 } = Astro.props;
 const date = stamp(entry.published);
 const locked = entry.visibility === 'password';
-const title = locked ? '密码保护：' + entry.title : entry.title;
+const title = locked ? '密码保护：' + entry.title : entry.visibility === 'private' ? '私密：' + entry.title : entry.title;
 const option = siteOptions(Astro.locals.argonOverrides);
 const summary = stripTags(entry.excerpt || entry.html);
 const cleanSummary = option('hide_shortcode_in_preview', 'true') === 'true' ? summary.replace(/\[\/?[\w-]+(?:\s+[^\]]*)?\]/g, '') : summary;
